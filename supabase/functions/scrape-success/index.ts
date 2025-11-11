@@ -65,8 +65,13 @@ Deno.serve(async (req: Request) => {
       .from("successful_scrapes")
       .insert({
         website: payload.website,
+        domain: payload.domain || null,
+        company: payload.company || null,
         batch_id: payload.batch_id,
         timestamp: timestamp,
+        emails: payload.emails || [],
+        industry: payload.industry || null,
+        icebreaker: payload.icebreaker || null,
         status: successStatus,
       });
 
