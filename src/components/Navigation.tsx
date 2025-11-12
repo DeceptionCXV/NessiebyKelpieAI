@@ -1,10 +1,11 @@
-import { Send, AlertCircle, Code, Database } from 'lucide-react';
+import { Send, AlertCircle, Code, Database, CheckCircle } from 'lucide-react';
 
 export const Navigation = () => {
   const currentPath = window.location.hash.slice(1) || '/';
 
   const navItems = [
     { path: '/', label: 'Outreach', icon: Send },
+    { path: '/leads', label: 'Successful Leads', icon: CheckCircle },
     { path: '/nessie', label: 'Failed Websites', icon: AlertCircle },
     { path: '/docs', label: 'API Docs', icon: Code },
     { path: '/dev/seed', label: 'Dev Seed', icon: Database },
