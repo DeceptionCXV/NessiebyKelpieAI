@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { OutreachSystem } from './OutreachSystem';
 import { FailedWebsitesPage } from './nessie/FailedWebsitesPage';
+import LeadsTable from './nessie/LeadsTable';
 import { DocsPage } from '../pages/DocsPage';
 import { SeedPage } from '../pages/SeedPage';
 
@@ -19,6 +20,8 @@ export const Router = () => {
   switch (currentPath) {
     case '/':
       return <OutreachSystem />;
+    case '/leads':
+      return <LeadsTable />;
     case '/nessie':
       return <FailedWebsitesPage />;
     case '/docs':
