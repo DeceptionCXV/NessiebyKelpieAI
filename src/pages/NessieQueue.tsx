@@ -1,0 +1,254 @@
+import { useState, useEffect } from 'react';
+import { TopBar } from '../components/nessie/TopBar';
+import { Sidebar } from '../components/nessie/Sidebar';
+import { TabBar } from '../components/nessie/TabBar';
+import { CreateBatchForm } from '../components/nessie/CreateBatchForm';
+import { LeadDetail } from '../components/nessie/LeadDetail';
+import { NotesPanel } from '../components/nessie/NotesPanel';
+import { Toast } from '../components/nessie/Toast';
+import { useBatches } from '../hooks/useBatches';
+import { useLeads } from '../hooks/useLeads';
+import { useToast } from '../hooks/useToast';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import type { SuccessfulScrape } from '../types/nessie';
+import '../styles/nessie.css';
+
+interface LeadTab {
+  leadId: string;
+  lead: SuccessfulScrape;
+}
+
+export const NessieQueue = () => {
+  const [activeView, setActiveView] = useState('Queue');
+  const [showCreateForm, setShowCreateForm] = useState(true);
+  const [activeBatchId, setActiveBatchId] = useState<string | null>(null);
+  const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
+  const [openTabs, setOpenTabs] = useState<LeadTab[]>([]);
+  const [leadsByBatch, setLeadsByBatch] = useState<Record<string, SuccessfulScrape[]>>({});
+  const [loadingLead, setLoadingLead] = useState(false);
+
+  const { batches, createBatch, updateBatch } = useBatches();
+  const { leads } = useLeads(activeBatchId);
+  const { toasts, showToast, removeToast } = useToast();
+
+  useEffect(() => {
+    if (activeBatchId && leads) {
+      setLeadsByBatch((prev) => ({
+        ...prev,
+        [activeBatchId]: leads,
+      }));
+    }
+  }, [activeBatchId, leads]);
+
+  useEffect(() => {
+    if (batches.length > 0 && !activeBatchId) {
+      setShowCreateForm(false);
+    }
+  }, [batches, activeBatchId]);
+
+  useKeyboardShortcuts({
+    onCreateBatch: () => {
+      setShowCreateForm(true);
+      setActiveBatchId(null);
+      setActiveLeadId(null);
+      showToast('Create a new batch');
+    },
+    onSaveNotes: () => {
+      if (activeLeadId) {
+        showToast('Note saved');
+      }
+    },
+    onNavigateUp: () => {
+      if (activeBatchId) {
+        const currentLeads = leadsByBatch[activeBatchId] || [];
+        const currentIndex = currentLeads.findIndex((l) => l.id === activeLeadId);
+        if (currentIndex > 0) {
+          openLead(currentLeads[currentIndex - 1], activeBatchId);
+        }
+      }
+    },
+    onNavigateDown: () => {
+      if (activeBatchId) {
+        const currentLeads = leadsByBatch[activeBatchId] || [];
+        const currentIndex = currentLeads.findIndex((l) => l.id === activeLeadId);
+        if (currentIndex < currentLeads.length - 1 && currentIndex !== -1) {
+          openLead(currentLeads[currentIndex + 1], activeBatchId);
+        }
+      }
+    },
+  });
+
+  const handleBatchSubmit = async (data: {
+    batchName: string;
+    channel: string;
+    subjectTemplate: string;
+    bodyTemplate: string;
+    urls: string[];
+  }) => {
+    const { data: batch, error } = await createBatch({
+      label: data.batchName,
+      total_urls: data.urls.length,
+      channel: data.channel,
+      subject_template: data.subjectTemplate,
+      body_template: data.bodyTemplate,
+    });
+
+    if (error || !batch) {
+      showToast('Error creating batch');
+      return;
+    }
+
+    showToast(`Nessie is hunting ${data.urls.length} leads...`);
+
+    await updateBatch(batch.id, { status: 'processing' });
+
+    const makeWebhookUrl = import.meta.env.VITE_MAKE_BATCH_WEBHOOK_URL;
+    if (makeWebhookUrl) {
+      try {
+        await fetch(makeWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            batch_id: batch.id,
+            batch_uuid: batch.id,
+            urls: data.urls,
+            label: data.batchName,
+          }),
+        });
+      } catch (error) {
+        console.error('Error sending webhook:', error);
+      }
+    }
+
+    setShowCreateForm(false);
+    setActiveBatchId(batch.id);
+  };
+
+  const handleBatchClick = (batchId: string) => {
+    setActiveBatchId(batchId);
+    setShowCreateForm(false);
+
+    const batchLeads = leadsByBatch[batchId] || [];
+    if (batchLeads.length > 0) {
+      if (!batchLeads.find((l) => l.id === activeLeadId)) {
+        openLead(batchLeads[0], batchId);
+      }
+    } else {
+      setActiveLeadId(null);
+    }
+  };
+
+  const handleLeadClick = (leadId: string, batchId: string) => {
+    const lead = leadsByBatch[batchId]?.find((l) => l.id === leadId);
+    if (lead) {
+      openLead(lead, batchId);
+    }
+  };
+
+  const openLead = (lead: SuccessfulScrape, batchId: string) => {
+    setLoadingLead(true);
+    setActiveLeadId(lead.id);
+    setActiveBatchId(batchId);
+
+    const existingTab = openTabs.find((t) => t.leadId === lead.id);
+    if (!existingTab) {
+      setOpenTabs((prev) => [...prev, { leadId: lead.id, lead }]);
+    }
+
+    setTimeout(() => {
+      setLoadingLead(false);
+    }, 200);
+  };
+
+  const handleTabClose = (leadId: string) => {
+    setOpenTabs((prev) => prev.filter((t) => t.leadId !== leadId));
+
+    if (activeLeadId === leadId) {
+      const remainingTabs = openTabs.filter((t) => t.leadId !== leadId);
+      if (remainingTabs.length > 0) {
+        const lastTab = remainingTabs[remainingTabs.length - 1];
+        setActiveLeadId(lastTab.leadId);
+      } else {
+        setActiveLeadId(null);
+      }
+    }
+  };
+
+  const currentLead = activeLeadId
+    ? Object.values(leadsByBatch)
+        .flat()
+        .find((l) => l.id === activeLeadId)
+    : null;
+
+  const currentBatch = batches.find((b) => b.id === activeBatchId);
+
+  return (
+    <div>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap"
+        rel="stylesheet"
+      />
+
+      <TopBar activeView={activeView} onViewChange={setActiveView} />
+
+      <div className="layout">
+        <Sidebar
+          batches={batches}
+          leadsByBatch={leadsByBatch}
+          activeBatchId={activeBatchId}
+          activeLeadId={activeLeadId}
+          onBatchClick={handleBatchClick}
+          onLeadClick={handleLeadClick}
+          onToast={showToast}
+        />
+
+        <main className="main">
+          <TabBar
+            tabs={openTabs}
+            activeLeadId={activeLeadId}
+            onTabClick={(leadId) => {
+              setActiveLeadId(leadId);
+              setLoadingLead(true);
+              setTimeout(() => setLoadingLead(false), 150);
+            }}
+            onTabClose={handleTabClose}
+          />
+
+          <div className="content">
+            <section className="content-main">
+              {showCreateForm ? (
+                <CreateBatchForm
+                  onSubmit={handleBatchSubmit}
+                  onToast={showToast}
+                />
+              ) : (
+                <LeadDetail
+                  lead={currentLead}
+                  batch={currentBatch || null}
+                  loading={loadingLead}
+                  onToast={showToast}
+                />
+              )}
+            </section>
+
+            {!showCreateForm && currentLead && (
+              <NotesPanel
+                lead={currentLead}
+                onSave={() => {}}
+                onToast={showToast}
+              />
+            )}
+          </div>
+        </main>
+      </div>
+
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          onClose={() => removeToast(toast.id)}
+        />
+      ))}
+    </div>
+  );
+};

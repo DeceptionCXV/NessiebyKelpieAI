@@ -4,6 +4,7 @@ import { FailedWebsitesPage } from './nessie/FailedWebsitesPage';
 import LeadsTable from './nessie/LeadsTable';
 import { DocsPage } from '../pages/DocsPage';
 import { SeedPage } from '../pages/SeedPage';
+import { NessieQueue } from '../pages/NessieQueue';
 
 export const Router = () => {
   const [currentPath, setCurrentPath] = useState(window.location.hash.slice(1) || '/');
@@ -24,6 +25,8 @@ export const Router = () => {
       return <LeadsTable />;
     case '/nessie':
       return <FailedWebsitesPage />;
+    case '/queue':
+      return <NessieQueue />;
     case '/docs':
       return <DocsPage />;
     case '/dev/seed':
