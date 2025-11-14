@@ -1,13 +1,7 @@
-import { Navigation } from './components/Navigation';
-import { Router } from './components/Router';
+import { NessieQueue } from './pages/NessieQueue';
 
 function App() {
-  return (
-    <>
-      <Navigation />
-      <Router />
-    </>
-  );
+  return <NessieQueue />;
 }
 
 export default App;
