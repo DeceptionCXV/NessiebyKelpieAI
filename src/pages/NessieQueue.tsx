@@ -110,9 +110,17 @@ export const NessieQueue = () => {
 
     if (makeWebhookUrl) {
       try {
+        const normalizedUrls = data.urls.map(url => {
+          const trimmedUrl = url.trim();
+          if (trimmedUrl.startsWith('https://') || trimmedUrl.startsWith('http://')) {
+            return trimmedUrl;
+          }
+          return `https://${trimmedUrl}`;
+        });
+
         console.log('Sending webhook to Make.com:', {
           batch_id: batch.id,
-          urls: data.urls,
+          urls: normalizedUrls,
           label: data.batchName,
         });
 
@@ -122,7 +130,7 @@ export const NessieQueue = () => {
           body: JSON.stringify({
             batch_id: batch.id,
             batch_uuid: batch.id,
-            urls: data.urls,
+            urls: normalizedUrls,
             label: data.batchName,
           }),
         });

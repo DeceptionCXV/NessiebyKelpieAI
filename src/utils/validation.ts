@@ -26,3 +26,17 @@ export const validateWebsites = (websites: string[]): { valid: boolean; error?: 
 
   return { valid: true };
 };
+
+export const normalizeUrl = (url: string): string => {
+  const trimmedUrl = url.trim();
+
+  if (trimmedUrl.startsWith('https://') || trimmedUrl.startsWith('http://')) {
+    return trimmedUrl;
+  }
+
+  return `https://${trimmedUrl}`;
+};
+
+export const normalizeUrls = (urls: string[]): string[] => {
+  return urls.map(normalizeUrl);
+};
