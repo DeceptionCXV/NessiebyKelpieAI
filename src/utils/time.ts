@@ -19,3 +19,5 @@ export const getRelativeTime = (timestamp: string): string => {
     return then.toLocaleDateString();
   }
 };
+
+export const formatTimeAgo = getRelativeTime;

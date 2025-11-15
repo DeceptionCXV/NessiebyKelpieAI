@@ -6,6 +6,7 @@ import { CreateBatchForm } from '../components/nessie/CreateBatchForm';
 import { LeadDetail } from '../components/nessie/LeadDetail';
 import { NotesPanel } from '../components/nessie/NotesPanel';
 import { Toast } from '../components/nessie/Toast';
+import { AnalyticsPage } from './AnalyticsPage';
 import { useBatches } from '../hooks/useBatches';
 import { useLeads } from '../hooks/useLeads';
 import { useToast } from '../hooks/useToast';
@@ -237,57 +238,73 @@ export const NessieQueue = () => {
         onCreateNewBatch={handleCreateNewBatch}
       />
 
-      <div className="layout">
-        <Sidebar
-          batches={batches}
-          leadsByBatch={leadsByBatch}
-          activeBatchId={activeBatchId}
-          activeLeadId={activeLeadId}
-          onBatchClick={handleBatchClick}
-          onLeadClick={handleLeadClick}
-          onToast={showToast}
-          onCreateNewBatch={handleCreateNewBatch}
+      {activeView === 'Analytics' ? (
+        <AnalyticsPage
+          onNavigateToBatch={(batchId) => {
+            setActiveView('Queue');
+            handleBatchClick(batchId);
+          }}
         />
-
-        <main className="main">
-          <TabBar
-            tabs={openTabs}
+      ) : activeView === 'Settings' ? (
+        <div style={{ padding: '40px', color: 'var(--text)' }}>
+          <div style={{ fontSize: '32px', fontFamily: 'Playfair Display, serif', marginBottom: '32px', fontWeight: 600 }}>
+            Settings
+          </div>
+          <div style={{ color: 'var(--text-secondary)' }}>Settings page coming soon...</div>
+        </div>
+      ) : (
+        <div className="layout">
+          <Sidebar
+            batches={batches}
+            leadsByBatch={leadsByBatch}
+            activeBatchId={activeBatchId}
             activeLeadId={activeLeadId}
-            onTabClick={(leadId) => {
-              setActiveLeadId(leadId);
-              setLoadingLead(true);
-              setTimeout(() => setLoadingLead(false), 150);
-            }}
-            onTabClose={handleTabClose}
+            onBatchClick={handleBatchClick}
+            onLeadClick={handleLeadClick}
+            onToast={showToast}
+            onCreateNewBatch={handleCreateNewBatch}
           />
 
-          <div className="content">
-            <section className="content-main">
-              {showCreateForm ? (
-                <CreateBatchForm
-                  onSubmit={handleBatchSubmit}
-                  onToast={showToast}
-                />
-              ) : (
-                <LeadDetail
+          <main className="main">
+            <TabBar
+              tabs={openTabs}
+              activeLeadId={activeLeadId}
+              onTabClick={(leadId) => {
+                setActiveLeadId(leadId);
+                setLoadingLead(true);
+                setTimeout(() => setLoadingLead(false), 150);
+              }}
+              onTabClose={handleTabClose}
+            />
+
+            <div className="content">
+              <section className="content-main">
+                {showCreateForm ? (
+                  <CreateBatchForm
+                    onSubmit={handleBatchSubmit}
+                    onToast={showToast}
+                  />
+                ) : (
+                  <LeadDetail
+                    lead={currentLead}
+                    batch={currentBatch || null}
+                    loading={loadingLead}
+                    onToast={showToast}
+                  />
+                )}
+              </section>
+
+              {!showCreateForm && currentLead && (
+                <NotesPanel
                   lead={currentLead}
-                  batch={currentBatch || null}
-                  loading={loadingLead}
+                  onSave={() => {}}
                   onToast={showToast}
                 />
               )}
-            </section>
-
-            {!showCreateForm && currentLead && (
-              <NotesPanel
-                lead={currentLead}
-                onSave={() => {}}
-                onToast={showToast}
-              />
-            )}
-          </div>
-        </main>
-      </div>
+            </div>
+          </main>
+        </div>
+      )}
 
       {toasts.map((toast) => (
         <Toast

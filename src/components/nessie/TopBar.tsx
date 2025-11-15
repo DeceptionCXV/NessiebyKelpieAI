@@ -5,7 +5,7 @@ interface TopBarProps {
 }
 
 export const TopBar = ({ activeView, onViewChange, onCreateNewBatch }: TopBarProps) => {
-  const views = ['Queue', 'Leads', 'Templates', 'Analytics', 'Settings'];
+  const views = ['Queue', 'Analytics', 'Settings'];
 
   return (
     <div className="topbar">
