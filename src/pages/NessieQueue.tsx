@@ -101,12 +101,18 @@ export const NessieQueue = () => {
     console.log('Batch created successfully:', batch);
     showToast(`Nessie is hunting ${data.urls.length} leads...`);
 
-    await updateBatch(batch.id, { status: 'processing' });
-
     const makeWebhookUrl = import.meta.env.VITE_MAKE_BATCH_WEBHOOK_URL;
+    console.log('Webhook URL from env:', makeWebhookUrl);
+
     if (makeWebhookUrl) {
       try {
-        await fetch(makeWebhookUrl, {
+        console.log('Sending webhook to Make.com:', {
+          batch_id: batch.id,
+          urls: data.urls,
+          label: data.batchName,
+        });
+
+        const webhookResponse = await fetch(makeWebhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -116,9 +122,25 @@ export const NessieQueue = () => {
             label: data.batchName,
           }),
         });
+
+        console.log('Webhook response status:', webhookResponse.status);
+        const responseText = await webhookResponse.text();
+        console.log('Webhook response body:', responseText);
+
+        if (webhookResponse.ok) {
+          console.log('Webhook sent successfully, updating batch status to processing');
+          await updateBatch(batch.id, { status: 'processing' });
+        } else {
+          console.error('Webhook failed with status:', webhookResponse.status);
+          showToast(`Webhook error: ${webhookResponse.status}`);
+        }
       } catch (error) {
         console.error('Error sending webhook:', error);
+        showToast('Failed to send webhook to Make.com');
       }
+    } else {
+      console.warn('VITE_MAKE_BATCH_WEBHOOK_URL not configured in .env');
+      showToast('Webhook URL not configured');
     }
 
     setShowCreateForm(false);

@@ -28,6 +28,7 @@ export const useBatches = () => {
           table: 'batches',
         },
         (payload) => {
+          console.log('Realtime batch event:', payload.eventType, payload);
           if (payload.eventType === 'INSERT') {
             setBatches((prev) => [payload.new as Batch, ...prev]);
           } else if (payload.eventType === 'UPDATE') {
@@ -39,7 +40,9 @@ export const useBatches = () => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
 
     return () => {
       channel.unsubscribe();
@@ -48,15 +51,21 @@ export const useBatches = () => {
 
   const fetchBatches = async () => {
     try {
+      console.log('Fetching batches...');
       const { data, error } = await supabase
         .from('batches')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching batches:', error);
+        throw error;
+      }
+
+      console.log('Batches fetched:', data);
       setBatches(data || []);
     } catch (error) {
-      console.error('Error fetching batches:', error);
+      console.error('Error fetching batches (caught):', error);
     } finally {
       setLoading(false);
     }

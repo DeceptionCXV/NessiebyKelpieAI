@@ -24,6 +24,8 @@ export const Sidebar = ({
 }: SidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  console.log('Sidebar rendering with batches:', batches);
+
   const handleToggle = () => {
     setIsCollapsed(!isCollapsed);
     onToast(isCollapsed ? 'Sidebar expanded' : 'Sidebar collapsed');
