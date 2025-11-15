@@ -6,8 +6,10 @@ interface BatchCardProps {
   batch: Batch;
   leads: SuccessfulScrape[];
   isActive: boolean;
+  isExpanded: boolean;
   activeLeadId: string | null;
   onClick: () => void;
+  onToggleExpand: () => void;
   onLeadClick: (leadId: string) => void;
 }
 
@@ -15,8 +17,10 @@ export const BatchCard = ({
   batch,
   leads,
   isActive,
+  isExpanded,
   activeLeadId,
   onClick,
+  onToggleExpand,
   onLeadClick,
 }: BatchCardProps) => {
   const progressPercent = batch.total_urls > 0
@@ -44,7 +48,15 @@ export const BatchCard = ({
             <span>Created {formatDate(batch.created_at)}</span>
           </div>
         </div>
-        <div className="batch-expand-icon">▾</div>
+        <div
+          className={`batch-expand-icon ${isExpanded ? 'expanded' : 'collapsed'}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleExpand();
+          }}
+        >
+          ▾
+        </div>
       </div>
 
       <div className="batch-meta">
@@ -70,31 +82,32 @@ export const BatchCard = ({
         </div>
       )}
 
-      {leads.length > 0 ? (
-        <div className="batch-leads">
-          <div className="batch-leads-title">Leads (drag to reorder)</div>
-          <ul className="lead-list">
-            {leads.map((lead) => (
-              <LeadItem
-                key={lead.id}
-                lead={lead}
-                isActive={lead.id === activeLeadId}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onLeadClick(lead.id);
-                }}
-              />
-            ))}
-          </ul>
-        </div>
-      ) : batch.status === 'processing' ? (
-        <div className="batch-leads">
-          <div className="batch-empty-processing">
-            <div className="emoji">🌊</div>
-            Nessie is hunting...
-          </div>
-        </div>
-      ) : null}
+      {isExpanded && (
+        <>
+          {leads.length > 0 ? (
+            <div className="batch-leads">
+              <div className="batch-leads-title">Leads (drag to reorder)</div>
+              <ul className="lead-list">
+                {leads.map((lead) => (
+                  <LeadItem
+                    key={lead.id}
+                    lead={lead}
+                    isActive={lead.id === activeLeadId}
+                    onClick={() => onLeadClick(lead.id)}
+                  />
+                ))}
+              </ul>
+            </div>
+          ) : batch.status === 'processing' ? (
+            <div className="batch-leads">
+              <div className="batch-empty-processing">
+                <div className="emoji">🌊</div>
+                Nessie is hunting...
+              </div>
+            </div>
+          ) : null}
+        </>
+      )}
     </div>
   );
 };

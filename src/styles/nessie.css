@@ -297,6 +297,21 @@ h1, h2, h3, .brand {
 .batch-expand-icon {
   font-size: 14px;
   opacity: 0.7;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  padding: 4px;
+  border-radius: 4px;
+  user-select: none;
+}
+
+.batch-expand-icon:hover {
+  opacity: 1;
+  background: rgba(17, 194, 210, 0.12);
+  color: var(--accent);
+}
+
+.batch-expand-icon.collapsed {
+  transform: rotate(-90deg);
 }
 
 /* Progress bar */
@@ -319,6 +334,18 @@ h1, h2, h3, .brand {
   margin-top: 8px;
   padding-top: 6px;
   border-top: 1px dashed rgba(124, 144, 154, 0.35);
+  animation: slideDown 0.25s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .batch-leads-title {
