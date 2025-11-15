@@ -28,7 +28,7 @@ export const NessieQueue = () => {
   const [leadsByBatch, setLeadsByBatch] = useState<Record<string, SuccessfulScrape[]>>({});
   const [loadingLead, setLoadingLead] = useState(false);
 
-  const { batches, createBatch, updateBatch } = useBatches();
+  const { batches, createBatch, updateBatch, refreshBatches } = useBatches();
   const { leads } = useLeads(activeBatchId);
   const { toasts, showToast, removeToast } = useToast();
 
@@ -105,7 +105,11 @@ export const NessieQueue = () => {
     }
 
     console.log('Batch created successfully:', batch);
-    showToast(`Nessie is hunting ${data.urls.length} leads...`);
+
+    await refreshBatches();
+    console.log('[NessieQueue] Batches list refreshed after creation');
+
+    showToast(`Batch created! Nessie is processing ${data.urls.length} leads...`);
 
     const makeWebhookUrl = import.meta.env.VITE_MAKE_BATCH_WEBHOOK_URL;
     console.log('Webhook URL from env:', makeWebhookUrl);
