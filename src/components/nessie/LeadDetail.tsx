@@ -26,21 +26,21 @@ export const LeadDetail = ({ lead, batch, loading, onToast }: LeadDetailProps) =
     );
   }
 
-  const mergeTemplate = (template: string, lead: SuccessfulScrape): string => {
-    const name = 'there';
-    return template
-      .replace(/\{\{\s*name\s*\}\}/gi, name)
-      .replace(/\{\{\s*company\s*\}\}/gi, lead.company || '')
-      .replace(/\{\{\s*industry\s*\}\}/gi, lead.industry || '')
-      .replace(/\{\{\s*icebreaker\s*\}\}/gi, lead.icebreaker || '')
-      .replace(/\{\{\s*website\s*\}\}/gi, lead.website || '');
-  };
+  const defaultSubject = `Quick idea for ${lead.company || lead.domain}`;
+  const defaultBody = `Hey there,
 
-  const subject = mergeTemplate(batch.subject_template || '', lead);
-  const body = mergeTemplate(batch.body_template || '', lead);
+${lead.icebreaker || 'I noticed your business online.'}
 
-  if (messageSubject === '' && subject) setMessageSubject(subject);
-  if (messageBody === '' && body) setMessageBody(body);
+Many ${lead.industry || 'businesses'} lose potential work because follow ups depend on whoever's available at the time. A simple automation layer keeps every enquiry answered, quotes followed up, and appointments booked, all without adding extra admin.
+
+Worth a quick chat this week to see how that setup could work for your team?
+
+Kind regards,
+Sami
+Kelpie AI × Especial Agency`;
+
+  if (messageSubject === '' && defaultSubject) setMessageSubject(defaultSubject);
+  if (messageBody === '' && defaultBody) setMessageBody(defaultBody);
 
   const copyToClipboard = (text: string) => {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -110,7 +110,7 @@ export const LeadDetail = ({ lead, batch, loading, onToast }: LeadDetailProps) =
       <div className="section">
         <div className="section-header">
           <div className="section-title">Message</div>
-          <div className="section-tag">template + placeholders merged</div>
+          <div className="section-tag">auto-generated outreach message</div>
         </div>
         <div className="card">
           <div style={{ marginBottom: '8px' }}>
@@ -129,7 +129,7 @@ export const LeadDetail = ({ lead, batch, loading, onToast }: LeadDetailProps) =
               onChange={(e) => setMessageBody(e.target.value)}
             />
             <div className="helper-text">
-              Generated from your batch template. Edit freely before sending.
+              Auto-generated message based on lead details. Edit freely before sending.
             </div>
           </div>
           <div className="button-row">

@@ -80,9 +80,6 @@ export const NessieQueue = () => {
 
   const handleBatchSubmit = async (data: {
     batchName: string;
-    channel: string;
-    subjectTemplate: string;
-    bodyTemplate: string;
     urls: string[];
   }) => {
     console.log('handleBatchSubmit called with:', data);
@@ -90,9 +87,6 @@ export const NessieQueue = () => {
     const { data: batch, error } = await createBatch({
       label: data.batchName,
       total_urls: data.urls.length,
-      channel: data.channel,
-      subject_template: data.subjectTemplate,
-      body_template: data.bodyTemplate,
     });
 
     if (error || !batch) {
