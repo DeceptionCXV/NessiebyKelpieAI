@@ -85,6 +85,8 @@ export const NessieQueue = () => {
     bodyTemplate: string;
     urls: string[];
   }) => {
+    console.log('handleBatchSubmit called with:', data);
+
     const { data: batch, error } = await createBatch({
       label: data.batchName,
       total_urls: data.urls.length,
@@ -94,10 +96,15 @@ export const NessieQueue = () => {
     });
 
     if (error || !batch) {
-      showToast('Error creating batch');
+      console.error('Failed to create batch. Error:', error);
+      const errorMessage = error && typeof error === 'object' && 'message' in error
+        ? (error as { message: string }).message
+        : 'Unknown error';
+      showToast(`Error creating batch: ${errorMessage}`);
       return;
     }
 
+    console.log('Batch created successfully:', batch);
     showToast(`Nessie is hunting ${data.urls.length} leads...`);
 
     await updateBatch(batch.id, { status: 'processing' });

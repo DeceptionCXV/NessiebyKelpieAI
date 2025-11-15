@@ -73,20 +73,35 @@ export const useBatches = () => {
     body_template?: string;
   }) => {
     try {
+      console.log('Creating batch with data:', batchData);
+
       const { data, error } = await supabase
         .from('batches')
         .insert({
-          ...batchData,
-          status: 'pending',
+          label: batchData.label,
+          status: 'pending' as const,
+          total_urls: batchData.total_urls,
           processed_urls: 0,
+          channel: batchData.channel || null,
+          subject_template: batchData.subject_template || null,
+          body_template: batchData.body_template || null,
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase insert error:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        throw error;
+      }
+
+      console.log('Batch created successfully:', data);
       return { data, error: null };
     } catch (error) {
-      console.error('Error creating batch:', error);
+      console.error('Error creating batch (caught):', error);
+      if (error && typeof error === 'object') {
+        console.error('Error object:', JSON.stringify(error, null, 2));
+      }
       return { data: null, error };
     }
   };
