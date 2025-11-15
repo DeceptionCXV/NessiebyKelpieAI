@@ -2,30 +2,33 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { SuccessfulScrape } from '../types/nessie';
 
-export const useLeads = (batchUuid: string | null) => {
+export const useLeads = (batchId: string | null) => {
   const [leads, setLeads] = useState<SuccessfulScrape[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!batchUuid) {
+    if (!batchId) {
+      console.log('[useLeads] No batchId provided, clearing leads');
       setLeads([]);
       setLoading(false);
       return;
     }
 
+    console.log('[useLeads] Loading leads for batch:', batchId);
     fetchLeads();
 
     const channel = supabase
-      .channel(`leads-${batchUuid}`)
+      .channel(`leads-${batchId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'successful_scrapes',
-          filter: `batch_uuid=eq.${batchUuid}`,
+          filter: `batch_uuid=eq.${batchId}`,
         },
         (payload) => {
+          console.log('[useLeads] Realtime event:', payload.eventType);
           if (payload.eventType === 'INSERT') {
             setLeads((prev) => [...prev, payload.new as SuccessfulScrape]);
           } else if (payload.eventType === 'UPDATE') {
@@ -44,23 +47,30 @@ export const useLeads = (batchUuid: string | null) => {
     return () => {
       channel.unsubscribe();
     };
-  }, [batchUuid]);
+  }, [batchId]);
 
   const fetchLeads = async () => {
-    if (!batchUuid) return;
+    if (!batchId) return;
 
     try {
       setLoading(true);
+      console.log('[useLeads] Querying successful_scrapes for batch_uuid:', batchId);
+
       const { data, error } = await supabase
         .from('successful_scrapes')
         .select('*')
-        .eq('batch_uuid', batchUuid)
+        .eq('batch_uuid', batchId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useLeads] Query error:', error);
+        throw error;
+      }
+
+      console.log('[useLeads] Leads loaded:', data?.length || 0, 'leads');
       setLeads(data || []);
     } catch (error) {
-      console.error('Error fetching leads:', error);
+      console.error('[useLeads] Error fetching leads:', error);
     } finally {
       setLoading(false);
     }

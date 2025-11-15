@@ -14,17 +14,23 @@ export const LeadDetail = ({ lead, batch, loading, onToast }: LeadDetailProps) =
   const [messageSubject, setMessageSubject] = useState('');
   const [messageBody, setMessageBody] = useState('');
 
+  console.log('[LeadDetail] Rendering. Loading:', loading, 'Lead:', lead?.id, 'Batch:', batch?.id);
+
   if (loading) {
+    console.log('[LeadDetail] Showing loading skeleton');
     return <LoadingSkeleton />;
   }
 
   if (!lead || !batch) {
+    console.log('[LeadDetail] No lead or batch selected');
     return (
       <div className="no-lead-selected">
         Select a lead from the left to see details and generate an outreach message.
       </div>
     );
   }
+
+  console.log('[LeadDetail] Displaying lead:', lead.company, lead.domain);
 
   const defaultSubject = `Quick idea for ${lead.company || lead.domain}`;
   const defaultBody = `Hey there,

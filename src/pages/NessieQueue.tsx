@@ -33,6 +33,7 @@ export const NessieQueue = () => {
 
   useEffect(() => {
     if (activeBatchId && leads) {
+      console.log('[NessieQueue] Updating leadsByBatch cache. Batch:', activeBatchId, 'Leads count:', leads.length);
       setLeadsByBatch((prev) => ({
         ...prev,
         [activeBatchId]: leads,
@@ -160,15 +161,21 @@ export const NessieQueue = () => {
   };
 
   const handleBatchClick = (batchId: string) => {
+    console.log('[NessieQueue] Batch clicked:', batchId);
     setActiveBatchId(batchId);
     setShowCreateForm(false);
+    console.log('[NessieQueue] Switched to batch view, hiding create form');
 
     const batchLeads = leadsByBatch[batchId] || [];
+    console.log('[NessieQueue] Leads in cache for batch:', batchLeads.length);
+
     if (batchLeads.length > 0) {
       if (!batchLeads.find((l) => l.id === activeLeadId)) {
+        console.log('[NessieQueue] Opening first lead from batch');
         openLead(batchLeads[0], batchId);
       }
     } else {
+      console.log('[NessieQueue] No leads in cache, clearing active lead');
       setActiveLeadId(null);
     }
   };

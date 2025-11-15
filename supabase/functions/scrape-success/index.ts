@@ -68,6 +68,7 @@ Deno.serve(async (req: Request) => {
         domain: payload.domain || null,
         company: payload.company || null,
         batch_id: payload.batch_id,
+        batch_uuid: payload.batch_uuid || payload.batch_id,
         timestamp: timestamp,
         emails: payload.emails || [],
         industry: payload.industry || null,
