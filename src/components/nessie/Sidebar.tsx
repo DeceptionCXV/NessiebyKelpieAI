@@ -11,6 +11,7 @@ interface SidebarProps {
   onBatchClick: (batchId: string) => void;
   onLeadClick: (leadId: string, batchId: string) => void;
   onToast: (message: string) => void;
+  onCreateNewBatch: () => void;
 }
 
 export const Sidebar = ({
@@ -21,6 +22,7 @@ export const Sidebar = ({
   onBatchClick,
   onLeadClick,
   onToast,
+  onCreateNewBatch,
 }: SidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedBatches, setExpandedBatches] = useState<Set<string>>(new Set());
@@ -69,13 +71,26 @@ export const Sidebar = ({
     <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-title">Batches</div>
-        <button
-          className="sidebar-toggle"
-          onClick={handleToggle}
-          title="Collapse sidebar"
-        >
-          ☰
-        </button>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <button
+            className="sidebar-toggle"
+            onClick={() => {
+              onCreateNewBatch();
+              onToast('Create a new batch');
+            }}
+            title="Create new batch"
+            style={{ background: 'var(--accent)', color: '#021014', fontWeight: 600 }}
+          >
+            +
+          </button>
+          <button
+            className="sidebar-toggle"
+            onClick={handleToggle}
+            title="Collapse sidebar"
+          >
+            ☰
+          </button>
+        </div>
       </div>
 
       <div className="batch-list">

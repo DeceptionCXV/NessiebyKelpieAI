@@ -46,11 +46,15 @@ export const NessieQueue = () => {
     }
   }, [batches, activeBatchId]);
 
+  const handleCreateNewBatch = () => {
+    setShowCreateForm(true);
+    setActiveBatchId(null);
+    setActiveLeadId(null);
+  };
+
   useKeyboardShortcuts({
     onCreateBatch: () => {
-      setShowCreateForm(true);
-      setActiveBatchId(null);
-      setActiveLeadId(null);
+      handleCreateNewBatch();
       showToast('Create a new batch');
     },
     onSaveNotes: () => {
@@ -212,7 +216,11 @@ export const NessieQueue = () => {
         rel="stylesheet"
       />
 
-      <TopBar activeView={activeView} onViewChange={setActiveView} />
+      <TopBar
+        activeView={activeView}
+        onViewChange={setActiveView}
+        onCreateNewBatch={handleCreateNewBatch}
+      />
 
       <div className="layout">
         <Sidebar
@@ -223,6 +231,7 @@ export const NessieQueue = () => {
           onBatchClick={handleBatchClick}
           onLeadClick={handleLeadClick}
           onToast={showToast}
+          onCreateNewBatch={handleCreateNewBatch}
         />
 
         <main className="main">
