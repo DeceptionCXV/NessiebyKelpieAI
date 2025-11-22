@@ -314,7 +314,6 @@ h1, h2, h3, .brand {
   transform: rotate(-90deg);
 }
 
-/* Progress bar */
 .batch-progress {
   height: 3px;
   background: rgba(124, 144, 154, 0.2);
