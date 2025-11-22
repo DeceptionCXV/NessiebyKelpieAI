@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import type { Batch } from '../../hooks/useBatches';
 import type { SuccessfulScrape } from '../../types/nessie';
 import { BatchCard } from './BatchCard';
-import { Search } from 'lucide-react';
+import { ConfirmDialog } from './ConfirmDialog';
+import { Search, RefreshCw, Trash2 } from 'lucide-react';
 
 interface SidebarProps {
   batches: Batch[];
@@ -13,6 +14,8 @@ interface SidebarProps {
   onLeadClick: (leadId: string, batchId: string) => void;
   onToast: (message: string) => void;
   onCreateNewBatch: () => void;
+  onRefreshBatches: () => Promise<void>;
+  onDeleteBatch: (batchId: string) => Promise<void>;
 }
 
 export const Sidebar = ({
@@ -24,10 +27,14 @@ export const Sidebar = ({
   onLeadClick,
   onToast,
   onCreateNewBatch,
+  onRefreshBatches,
+  onDeleteBatch,
 }: SidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedBatches, setExpandedBatches] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   console.log('Sidebar rendering with batches:', batches);
 
@@ -35,6 +42,37 @@ export const Sidebar = ({
     setIsCollapsed(!isCollapsed);
     onToast(isCollapsed ? 'Sidebar expanded' : 'Sidebar collapsed');
   };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await onRefreshBatches();
+      onToast('Batches refreshed');
+    } catch (error) {
+      onToast('Failed to refresh batches');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    if (!activeBatchId) return;
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!activeBatchId) return;
+    setShowDeleteDialog(false);
+    try {
+      await onDeleteBatch(activeBatchId);
+      onToast('Batch deleted');
+    } catch (error) {
+      onToast('Failed to delete batch');
+    }
+  };
+
+  const activeBatch = batches.find((b) => b.id === activeBatchId);
+  const leadCount = activeBatch ? (leadsByBatch[activeBatch.id] || []).length : 0;
 
   const handleBatchToggle = (batchId: string) => {
     setExpandedBatches((prev) => {
@@ -116,6 +154,30 @@ export const Sidebar = ({
           </button>
           <button
             className="sidebar-toggle"
+            onClick={handleRefresh}
+            title="Refresh batches"
+            disabled={isRefreshing}
+            style={{
+              opacity: isRefreshing ? 0.5 : 1,
+              cursor: isRefreshing ? 'not-allowed' : 'pointer',
+            }}
+          >
+            <RefreshCw size={14} style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }} />
+          </button>
+          <button
+            className="sidebar-toggle"
+            onClick={handleDeleteClick}
+            title="Delete batch (Del)"
+            disabled={!activeBatchId}
+            style={{
+              opacity: !activeBatchId ? 0.3 : 1,
+              cursor: !activeBatchId ? 'not-allowed' : 'pointer',
+            }}
+          >
+            <Trash2 size={14} />
+          </button>
+          <button
+            className="sidebar-toggle"
             onClick={handleToggle}
             title="Collapse sidebar"
           >
@@ -190,6 +252,29 @@ export const Sidebar = ({
           ))
         )}
       </div>
+
+      {showDeleteDialog && activeBatch && (
+        <ConfirmDialog
+          title="Delete Batch"
+          message={`Are you sure you want to delete this batch? This will also delete all ${leadCount} leads associated with it. This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          isDestructive={true}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setShowDeleteDialog(false)}
+        />
+      )}
+
+      <style>{`
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
     </aside>
   );
 };

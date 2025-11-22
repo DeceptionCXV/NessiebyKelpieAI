@@ -121,11 +121,33 @@ export const useBatches = () => {
     }
   };
 
+  const deleteBatch = async (id: string) => {
+    try {
+      console.log('Deleting batch:', id);
+      const { error } = await supabase
+        .from('batches')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting batch:', error);
+        throw error;
+      }
+
+      console.log('Batch deleted successfully');
+      return { error: null };
+    } catch (error) {
+      console.error('Error deleting batch (caught):', error);
+      return { error };
+    }
+  };
+
   return {
     batches,
     loading,
     createBatch,
     updateBatch,
+    deleteBatch,
     refreshBatches: fetchBatches,
   };
 };

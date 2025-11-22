@@ -28,7 +28,7 @@ export const NessieQueue = () => {
   const [leadsByBatch, setLeadsByBatch] = useState<Record<string, SuccessfulScrape[]>>({});
   const [loadingLead, setLoadingLead] = useState(false);
 
-  const { batches, createBatch, updateBatch, refreshBatches } = useBatches();
+  const { batches, createBatch, updateBatch, deleteBatch, refreshBatches } = useBatches();
   const { leads } = useLeads(activeBatchId);
   const { toasts, showToast, removeToast } = useToast();
 
@@ -52,6 +52,23 @@ export const NessieQueue = () => {
     setShowCreateForm(true);
     setActiveBatchId(null);
     setActiveLeadId(null);
+  };
+
+  const handleDeleteBatch = async () => {
+    if (!activeBatchId) return;
+
+    const { error } = await deleteBatch(activeBatchId);
+    if (error) {
+      showToast('Failed to delete batch');
+      return;
+    }
+
+    setActiveBatchId(null);
+    setActiveLeadId(null);
+    setShowCreateForm(batches.length <= 1);
+
+    await refreshBatches();
+    showToast('Batch deleted');
   };
 
   useKeyboardShortcuts({
@@ -82,6 +99,7 @@ export const NessieQueue = () => {
         }
       }
     },
+    onDeleteBatch: handleDeleteBatch,
   });
 
   const handleBatchSubmit = async (data: {
@@ -267,6 +285,8 @@ export const NessieQueue = () => {
             onLeadClick={handleLeadClick}
             onToast={showToast}
             onCreateNewBatch={handleCreateNewBatch}
+            onRefreshBatches={refreshBatches}
+            onDeleteBatch={handleDeleteBatch}
           />
 
           <main className="main">

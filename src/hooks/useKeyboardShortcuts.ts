@@ -5,6 +5,7 @@ export interface KeyboardShortcuts {
   onSaveNotes?: () => void;
   onNavigateUp?: () => void;
   onNavigateDown?: () => void;
+  onDeleteBatch?: () => void;
 }
 
 export const useKeyboardShortcuts = ({
@@ -12,6 +13,7 @@ export const useKeyboardShortcuts = ({
   onSaveNotes,
   onNavigateUp,
   onNavigateDown,
+  onDeleteBatch,
 }: KeyboardShortcuts) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -34,6 +36,11 @@ export const useKeyboardShortcuts = ({
         e.preventDefault();
         onNavigateDown();
       }
+
+      if (e.key === 'Delete' && onDeleteBatch) {
+        e.preventDefault();
+        onDeleteBatch();
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -41,5 +48,5 @@ export const useKeyboardShortcuts = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onCreateBatch, onSaveNotes, onNavigateUp, onNavigateDown]);
+  }, [onCreateBatch, onSaveNotes, onNavigateUp, onNavigateDown, onDeleteBatch]);
 };
