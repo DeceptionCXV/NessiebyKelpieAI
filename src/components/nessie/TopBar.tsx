@@ -52,7 +52,7 @@ export const TopBar = ({ activeView, onViewChange, onCreateNewBatch }: TopBarPro
         >
           <span style={{ fontSize: '14px' }}>+</span> New Batch
         </button>
-        <div className="topbar-user">Sami Mustafa (ADMIN) · Kelpie AI</div>
+        <div className="topbar-user">Sami Mustafa (admin) · Kelpie AI</div>
       </div>
     </div>
   );
