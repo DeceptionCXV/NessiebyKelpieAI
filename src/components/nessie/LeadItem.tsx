@@ -9,27 +9,16 @@ interface LeadItemProps {
   onDragEnd?: (e: React.DragEvent) => void;
 }
 
-const truncateUrl = (url: string | undefined, maxLength: number = 20): string => {
+const cleanAndTruncateUrl = (url: string | undefined, maxLength: number = 18): string => {
   if (!url) return '';
 
-  const cleanUrl = url.replace(/^(https?:\/\/)?(www\.)?/, '');
+  const cleanUrl = url.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
 
   if (cleanUrl.length <= maxLength) {
     return cleanUrl;
   }
 
-  const parts = cleanUrl.split('/');
-  const domain = parts[0];
-
-  if (domain.length > maxLength) {
-    return domain.substring(0, maxLength - 3) + '...';
-  }
-
-  if (parts.length > 1) {
-    return domain + '/...';
-  }
-
-  return cleanUrl.substring(0, maxLength - 3) + '...';
+  return cleanUrl.substring(0, maxLength) + '...';
 };
 
 export const LeadItem = ({
@@ -41,7 +30,7 @@ export const LeadItem = ({
 }: LeadItemProps) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const fullUrl = lead.website || lead.domain || '';
-  const displayUrl = truncateUrl(fullUrl);
+  const displayUrl = cleanAndTruncateUrl(fullUrl, 18);
 
   return (
     <li
