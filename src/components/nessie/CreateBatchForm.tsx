@@ -111,47 +111,44 @@ export const CreateBatchForm = ({ onSubmit, onToast }: CreateBatchFormProps) => 
             </div>
 
             <div className="form-full">
-              <div className="label">Campaign Type</div>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => setChannel('dm')}
-                  style={{
-                    flex: 1,
-                    padding: '10px 20px',
-                    borderRadius: '10px',
-                    border: channel === 'dm' ? '2px solid #11c2d2' : '1px solid var(--border)',
-                    background: channel === 'dm' ? 'rgba(17, 194, 210, 0.15)' : '#0d151a',
-                    color: channel === 'dm' ? '#11c2d2' : 'var(--text-muted)',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  DM
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setChannel('email')}
-                  style={{
-                    flex: 1,
-                    padding: '10px 20px',
-                    borderRadius: '10px',
-                    border: channel === 'email' ? '2px solid #11c2d2' : '1px solid var(--border)',
-                    background: channel === 'email' ? 'rgba(17, 194, 210, 0.15)' : '#0d151a',
-                    color: channel === 'email' ? '#11c2d2' : 'var(--text-muted)',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  Email
-                </button>
-              </div>
-              <div className="helper-text">
-                Choose how you'll reach out to these leads.
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+                <div className="label" style={{ margin: 0, fontSize: '12px' }}>Campaign Type</div>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setChannel('dm')}
+                    style={{
+                      padding: '6px 16px',
+                      borderRadius: '8px',
+                      border: channel === 'dm' ? '2px solid #11c2d2' : '1px solid var(--border)',
+                      background: channel === 'dm' ? 'rgba(17, 194, 210, 0.15)' : '#0d151a',
+                      color: channel === 'dm' ? '#11c2d2' : 'var(--text-muted)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    DM
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChannel('email')}
+                    style={{
+                      padding: '6px 16px',
+                      borderRadius: '8px',
+                      border: channel === 'email' ? '2px solid #11c2d2' : '1px solid var(--border)',
+                      background: channel === 'email' ? 'rgba(17, 194, 210, 0.15)' : '#0d151a',
+                      color: channel === 'email' ? '#11c2d2' : 'var(--text-muted)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    Email
+                  </button>
+                </div>
               </div>
             </div>
 
