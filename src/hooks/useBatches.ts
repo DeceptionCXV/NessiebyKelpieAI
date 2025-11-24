@@ -9,6 +9,9 @@ export interface Batch {
   status: 'pending' | 'processing' | 'complete';
   total_urls: number;
   processed_urls: number;
+  channel?: string;
+  subject_template?: string;
+  message_template?: string;
 }
 
 export const useBatches = () => {
@@ -74,6 +77,9 @@ export const useBatches = () => {
   const createBatch = async (batchData: {
     label: string;
     total_urls: number;
+    channel?: string;
+    subject_template?: string;
+    message_template?: string;
   }) => {
     try {
       console.log('Creating batch with data:', batchData);
@@ -85,6 +91,9 @@ export const useBatches = () => {
           status: 'pending' as const,
           total_urls: batchData.total_urls,
           processed_urls: 0,
+          channel: batchData.channel || 'dm',
+          subject_template: batchData.subject_template,
+          message_template: batchData.message_template,
         })
         .select()
         .single();
