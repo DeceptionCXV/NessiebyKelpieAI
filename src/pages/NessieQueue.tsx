@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { TopBar } from '../components/nessie/TopBar';
 import { Sidebar } from '../components/nessie/Sidebar';
 import { TabBar } from '../components/nessie/TabBar';
-import { CreateBatchForm } from '../components/nessie/CreateBatchForm';
 import { LeadDetail } from '../components/nessie/LeadDetail';
 import { NotesPanel } from '../components/nessie/NotesPanel';
 import { Toast } from '../components/nessie/Toast';
@@ -21,14 +20,13 @@ interface LeadTab {
 
 export const NessieQueue = () => {
   const [activeView, setActiveView] = useState('Queue');
-  const [showCreateForm, setShowCreateForm] = useState(true);
   const [activeBatchId, setActiveBatchId] = useState<string | null>(null);
   const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
   const [openTabs, setOpenTabs] = useState<LeadTab[]>([]);
   const [leadsByBatch, setLeadsByBatch] = useState<Record<string, SuccessfulScrape[]>>({});
   const [loadingLead, setLoadingLead] = useState(false);
 
-  const { batches, createBatch, updateBatch, deleteBatch, refreshBatches } = useBatches();
+  const { batches, deleteBatch, refreshBatches } = useBatches();
   const { leads } = useLeads(activeBatchId);
   const { toasts, showToast, removeToast } = useToast();
 
@@ -42,16 +40,9 @@ export const NessieQueue = () => {
     }
   }, [activeBatchId, leads]);
 
-  useEffect(() => {
-    if (batches.length > 0 && !activeBatchId) {
-      setShowCreateForm(false);
-    }
-  }, [batches, activeBatchId]);
 
   const handleCreateNewBatch = () => {
-    setShowCreateForm(true);
-    setActiveBatchId(null);
-    setActiveLeadId(null);
+    window.location.hash = '#/queue/new';
   };
 
   const handleDeleteBatch = async () => {
@@ -102,101 +93,10 @@ export const NessieQueue = () => {
     onDeleteBatch: handleDeleteBatch,
   });
 
-  const handleBatchSubmit = async (data: {
-    batchName: string;
-    urls: string[];
-    channel: 'email' | 'dm';
-    subjectTemplate?: string;
-    messageTemplate: string;
-  }) => {
-    console.log('handleBatchSubmit called with:', data);
-
-    const { data: batch, error } = await createBatch({
-      label: data.batchName,
-      total_urls: data.urls.length,
-      channel: data.channel,
-      subject_template: data.subjectTemplate,
-      message_template: data.messageTemplate,
-    });
-
-    if (error || !batch) {
-      console.error('Failed to create batch. Error:', error);
-      const errorMessage = error && typeof error === 'object' && 'message' in error
-        ? (error as { message: string }).message
-        : 'Unknown error';
-      showToast(`Error creating batch: ${errorMessage}`);
-      return;
-    }
-
-    console.log('Batch created successfully:', batch);
-
-    await refreshBatches();
-    console.log('[NessieQueue] Batches list refreshed after creation');
-
-    showToast(`Batch created! Nessie is processing ${data.urls.length} leads...`);
-
-    const makeWebhookUrl = import.meta.env.VITE_MAKE_BATCH_WEBHOOK_URL;
-    console.log('Webhook URL from env:', makeWebhookUrl);
-
-    if (makeWebhookUrl) {
-      try {
-        const normalizedUrls = data.urls.map(url => {
-          const trimmedUrl = url.trim();
-          if (trimmedUrl.startsWith('https://') || trimmedUrl.startsWith('http://')) {
-            return trimmedUrl;
-          }
-          return `https://${trimmedUrl}`;
-        });
-
-        console.log('Sending webhook to Make.com:', {
-          batch_id: batch.id,
-          urls: normalizedUrls,
-          label: data.batchName,
-        });
-
-        const webhookResponse = await fetch(makeWebhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            batch_id: batch.id,
-            batch_uuid: batch.id,
-            urls: normalizedUrls,
-            label: data.batchName,
-            channel: data.channel,
-            subject_template: data.subjectTemplate,
-            message_template: data.messageTemplate,
-          }),
-        });
-
-        console.log('Webhook response status:', webhookResponse.status);
-        const responseText = await webhookResponse.text();
-        console.log('Webhook response body:', responseText);
-
-        if (webhookResponse.ok) {
-          console.log('Webhook sent successfully, updating batch status to processing');
-          await updateBatch(batch.id, { status: 'processing' });
-        } else {
-          console.error('Webhook failed with status:', webhookResponse.status);
-          showToast(`Webhook error: ${webhookResponse.status}`);
-        }
-      } catch (error) {
-        console.error('Error sending webhook:', error);
-        showToast('Failed to send webhook to Make.com');
-      }
-    } else {
-      console.warn('VITE_MAKE_BATCH_WEBHOOK_URL not configured in .env');
-      showToast('Webhook URL not configured');
-    }
-
-    setShowCreateForm(false);
-    setActiveBatchId(batch.id);
-  };
 
   const handleBatchClick = (batchId: string) => {
     console.log('[NessieQueue] Batch clicked:', batchId);
     setActiveBatchId(batchId);
-    setShowCreateForm(false);
-    console.log('[NessieQueue] Switched to batch view, hiding create form');
 
     const batchLeads = leadsByBatch[batchId] || [];
     console.log('[NessieQueue] Leads in cache for batch:', batchLeads.length);
@@ -266,7 +166,7 @@ export const NessieQueue = () => {
       <TopBar
         activeView={activeView}
         onViewChange={setActiveView}
-        onCreateNewBatch={handleCreateNewBatch}
+        onNewBatchClick={handleCreateNewBatch}
       />
 
       {activeView === 'Analytics' ? (
@@ -312,22 +212,15 @@ export const NessieQueue = () => {
 
             <div className="content">
               <section className="content-main">
-                {showCreateForm ? (
-                  <CreateBatchForm
-                    onSubmit={handleBatchSubmit}
-                    onToast={showToast}
-                  />
-                ) : (
-                  <LeadDetail
-                    lead={currentLead}
-                    batch={currentBatch || null}
-                    loading={loadingLead}
-                    onToast={showToast}
-                  />
-                )}
+                <LeadDetail
+                  lead={currentLead}
+                  batch={currentBatch || null}
+                  loading={loadingLead}
+                  onToast={showToast}
+                />
               </section>
 
-              {!showCreateForm && currentLead && (
+              {currentLead && (
                 <NotesPanel
                   lead={currentLead}
                   onSave={() => {}}

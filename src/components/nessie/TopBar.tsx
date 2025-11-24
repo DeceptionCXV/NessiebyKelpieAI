@@ -1,10 +1,10 @@
 interface TopBarProps {
   activeView: string;
   onViewChange: (view: string) => void;
-  onCreateNewBatch: () => void;
+  onNewBatchClick?: () => void;
 }
 
-export const TopBar = ({ activeView, onViewChange, onCreateNewBatch }: TopBarProps) => {
+export const TopBar = ({ activeView, onViewChange, onNewBatchClick }: TopBarProps) => {
   const views = ['Queue', 'Analytics', 'Settings'];
 
   return (
@@ -24,7 +24,13 @@ export const TopBar = ({ activeView, onViewChange, onCreateNewBatch }: TopBarPro
           </span>
         ))}
         <button
-          onClick={onCreateNewBatch}
+          onClick={() => {
+            if (onNewBatchClick) {
+              onNewBatchClick();
+            } else {
+              window.location.hash = '#/queue/new';
+            }
+          }}
           style={{
             background: 'var(--accent)',
             color: '#021014',
