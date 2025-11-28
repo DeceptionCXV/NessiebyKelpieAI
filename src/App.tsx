@@ -1,7 +1,7 @@
-import { NessieQueue } from './pages/NessieQueue';
+import { Router } from './components/Router';
 
 function App() {
-  return <NessieQueue />;
+  return <Router />;
 }
 
 export default App;
