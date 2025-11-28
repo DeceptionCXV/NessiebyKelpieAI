@@ -102,7 +102,15 @@ export const CreateBatchPage = () => {
 
   return (
     <div className="nessie-container">
-      <TopBar onNewBatchClick={() => {}} activeView="Queue" onViewChange={() => {}} />
+      <TopBar 
+        activeView="Queue" 
+        onViewChange={(view) => {
+          if (view === 'Queue') window.location.hash = '#/queue';
+          if (view === 'Analytics') window.location.hash = '#/analytics';
+          if (view === 'Settings') window.location.hash = '#/settings';
+        }} 
+        onNewBatchClick={() => {}} 
+      />
 
       <div style={{
         maxWidth: '1200px',
