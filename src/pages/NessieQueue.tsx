@@ -56,7 +56,6 @@ export const NessieQueue = () => {
 
     setActiveBatchId(null);
     setActiveLeadId(null);
-    setShowCreateForm(batches.length <= 1);
 
     await refreshBatches();
     showToast('Batch deleted');
