@@ -21,20 +21,21 @@ export const Router = () => {
 
   switch (currentPath) {
     case '/':
-      return <OutreachSystem />;
+    case '/queue':
+      return <NessieQueue />;
     case '/leads':
       return <LeadsTable />;
     case '/nessie':
       return <FailedWebsitesPage />;
-    case '/queue':
-      return <NessieQueue />;
     case '/queue/new':
       return <CreateBatchPage />;
     case '/docs':
       return <DocsPage />;
     case '/dev/seed':
       return <SeedPage />;
-    default:
+    case '/old':
       return <OutreachSystem />;
+    default:
+      return <NessieQueue />;
   }
 };
