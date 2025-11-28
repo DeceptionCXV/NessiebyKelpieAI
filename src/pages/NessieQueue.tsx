@@ -45,17 +45,21 @@ export const NessieQueue = () => {
     window.location.hash = '#/queue/new';
   };
 
-  const handleDeleteBatch = async () => {
-    if (!activeBatchId) return;
+  const handleDeleteBatch = async (batchId?: string) => {
+    const idToDelete = batchId || activeBatchId;
+    if (!idToDelete) return;
 
-    const { error } = await deleteBatch(activeBatchId);
+    const { error } = await deleteBatch(idToDelete);
     if (error) {
       showToast('Failed to delete batch');
       return;
     }
 
-    setActiveBatchId(null);
-    setActiveLeadId(null);
+    // If we deleted the active batch, clear selection
+    if (idToDelete === activeBatchId) {
+      setActiveBatchId(null);
+      setActiveLeadId(null);
+    }
 
     await refreshBatches();
     showToast('Batch deleted');
