@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { SuccessfulScrape } from '../../types/nessie';
 import type { Batch } from '../../hooks/useBatches';
 import { LoadingSkeleton } from './LoadingSkeleton';
@@ -16,6 +16,28 @@ export const LeadDetail = ({ lead, batch, loading, onToast }: LeadDetailProps) =
 
   console.log('[LeadDetail] Rendering. Loading:', loading, 'Lead:', lead?.id, 'Batch:', batch?.id);
 
+  // Update message when lead changes
+  useEffect(() => {
+    if (lead) {
+      // Use the custom subject/message from Make if available, otherwise use defaults
+      const subject = lead.subject || `Quick idea for ${lead.company || lead.domain}`;
+      const body = lead.message || `Hey there,
+
+${lead.icebreaker || 'I noticed your business online.'}
+
+Many ${lead.industry || 'businesses'} lose potential work because follow ups depend on whoever's available at the time. A simple automation layer keeps every enquiry answered, quotes followed up, and appointments booked, all without adding extra admin.
+
+Worth a quick chat this week to see how that setup could work for your team?
+
+Kind regards,
+Kelpie AI × Especial Agency
+Where Marketing Meets Automation`;
+
+      setMessageSubject(subject);
+      setMessageBody(body);
+    }
+  }, [lead]);
+
   if (loading) {
     console.log('[LeadDetail] Showing loading skeleton');
     return <LoadingSkeleton />;
@@ -31,22 +53,6 @@ export const LeadDetail = ({ lead, batch, loading, onToast }: LeadDetailProps) =
   }
 
   console.log('[LeadDetail] Displaying lead:', lead.company, lead.domain);
-
-  const defaultSubject = `Quick idea for ${lead.company || lead.domain}`;
-  const defaultBody = `Hey there,
-
-${lead.icebreaker || 'I noticed your business online.'}
-
-Many ${lead.industry || 'businesses'} lose potential work because follow ups depend on whoever's available at the time. A simple automation layer keeps every enquiry answered, quotes followed up, and appointments booked, all without adding extra admin.
-
-Worth a quick chat this week to see how that setup could work for your team?
-
-Kind regards,
-Sami
-Kelpie AI × Especial Agency`;
-
-  if (messageSubject === '' && defaultSubject) setMessageSubject(defaultSubject);
-  if (messageBody === '' && defaultBody) setMessageBody(defaultBody);
 
   const copyToClipboard = (text: string) => {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -116,46 +122,57 @@ Kelpie AI × Especial Agency`;
       <div className="section">
         <div className="section-header">
           <div className="section-title">Message</div>
-          <div className="section-tag">auto-generated outreach message</div>
+          <div className="section-tag">
+            {lead.message ? 'from your custom template' : 'auto-generated outreach message'}
+          </div>
         </div>
         <div className="card">
-          <div style={{ marginBottom: '8px' }}>
-            <div className="label">Subject</div>
-            <input
-              className="input"
-              value={messageSubject}
-              onChange={(e) => setMessageSubject(e.target.value)}
-            />
-          </div>
+          {batch.channel === 'email' && (
+            <div style={{ marginBottom: '8px' }}>
+              <div className="label">Subject</div>
+              <input
+                className="input"
+                value={messageSubject}
+                onChange={(e) => setMessageSubject(e.target.value)}
+              />
+            </div>
+          )}
           <div>
             <div className="label">Body</div>
             <textarea
               className="textarea"
               value={messageBody}
               onChange={(e) => setMessageBody(e.target.value)}
+              style={{ minHeight: '200px' }}
             />
             <div className="helper-text">
-              Auto-generated message based on lead details. Edit freely before sending.
+              {lead.message 
+                ? 'Generated from your custom template. Edit freely before sending.'
+                : 'Auto-generated message based on lead details. Edit freely before sending.'}
             </div>
           </div>
           <div className="button-row">
-            <button className="btn" onClick={() => copyToClipboard(messageSubject)}>
-              Copy subject
-            </button>
+            {batch.channel === 'email' && (
+              <button className="btn" onClick={() => copyToClipboard(messageSubject)}>
+                Copy subject
+              </button>
+            )}
             <button
               className="btn secondary"
               onClick={() => copyToClipboard(messageBody)}
             >
-              Copy body
+              Copy {batch.channel === 'email' ? 'body' : 'message'}
             </button>
-            <button
-              className="btn ghost"
-              onClick={() =>
-                copyToClipboard(`Subject: ${messageSubject}\n\n${messageBody}`)
-              }
-            >
-              Copy full message
-            </button>
+            {batch.channel === 'email' && (
+              <button
+                className="btn ghost"
+                onClick={() =>
+                  copyToClipboard(`Subject: ${messageSubject}\n\n${messageBody}`)
+                }
+              >
+                Copy full message
+              </button>
+            )}
           </div>
         </div>
       </div>
