@@ -46,10 +46,21 @@ export const NessieQueue = () => {
   };
 
   const handleDeleteBatch = async (batchId?: string) => {
+    console.log('🗑️ DELETE CALLED with batchId:', batchId);
+    console.log('🗑️ activeBatchId:', activeBatchId);
+    
     const idToDelete = batchId || activeBatchId;
-    if (!idToDelete) return;
+    console.log('🗑️ Will delete:', idToDelete);
+    
+    if (!idToDelete) {
+      console.log('❌ No batch ID to delete!');
+      return;
+    }
 
     const { error } = await deleteBatch(idToDelete);
+    
+    console.log('🗑️ Delete result - Error:', error);
+    
     if (error) {
       showToast('Failed to delete batch');
       return;
