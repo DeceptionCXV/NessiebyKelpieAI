@@ -144,6 +144,10 @@ export const useBatches = () => {
       }
 
       console.log('Batch deleted successfully');
+      
+      // Manually remove from state (don't wait for realtime)
+      setBatches((prev) => prev.filter((b) => b.id !== id));
+      
       return { error: null };
     } catch (error) {
       console.error('Error deleting batch (caught):', error);
