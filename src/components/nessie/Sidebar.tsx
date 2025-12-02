@@ -3,7 +3,7 @@ import type { Batch } from '../../hooks/useBatches';
 import type { SuccessfulScrape } from '../../types/nessie';
 import { BatchCard } from './BatchCard';
 import { ConfirmDialog } from './ConfirmDialog';
-import { Search, RefreshCw, Trash2 } from 'lucide-react';
+import { Search, RefreshCw, Trash2, Download } from 'lucide-react';
 
 interface SidebarProps {
   batches: Batch[];
@@ -58,23 +58,87 @@ export const Sidebar = ({
   };
 
   const handleDeleteClick = () => {
-    if (!activeBatchId) return;
-    setShowDeleteDialog(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!activeBatchId) return;
-    setShowDeleteDialog(false);
-    try {
-      await onDeleteBatch(activeBatchId);
-      onToast('Batch deleted');
-    } catch (error) {
-      onToast('Failed to delete batch');
+    // If batches are selected, delete them. Otherwise delete active batch.
+    if (selectedBatchIds.size > 0) {
+      setShowDeleteDialog(true);
+    } else if (activeBatchId) {
+      setShowDeleteDialog(true);
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    setShowDeleteDialog(false);
+    
+    if (selectedBatchIds.size > 0) {
+      // Bulk delete
+      try {
+        for (const batchId of selectedBatchIds) {
+          await onDeleteBatch(batchId);
+        }
+        onToast(`${selectedBatchIds.size} batch${selectedBatchIds.size > 1 ? 'es' : ''} deleted`);
+        setSelectedBatchIds(new Set());
+        setLastSelectedBatchId(null);
+      } catch (error) {
+        onToast('Failed to delete batches');
+      }
+    } else if (activeBatchId) {
+      // Single delete
+      try {
+        await onDeleteBatch(activeBatchId);
+        onToast('Batch deleted');
+      } catch (error) {
+        onToast('Failed to delete batch');
+      }
+    }
+  };
+
+  const handleExportClick = () => {
+    if (selectedBatchIds.size === 0) return;
+    
+    // Collect all leads from selected batches
+    const allLeads: SuccessfulScrape[] = [];
+    selectedBatchIds.forEach(batchId => {
+      const leads = leadsByBatch[batchId] || [];
+      allLeads.push(...leads);
+    });
+    
+    if (allLeads.length === 0) {
+      onToast('No leads to export');
+      return;
+    }
+    
+    // Create CSV
+    const headers = ['Company', 'Website', 'Industry', 'Emails', 'Batch'];
+    const rows = allLeads.map(lead => [
+      lead.company || '',
+      lead.website || '',
+      lead.industry || '',
+      (lead.emails || []).join('; '),
+      batches.find(b => b.id === lead.batch_id)?.label || ''
+    ]);
+    
+    const csv = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+    
+    // Download
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nessie-export-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    onToast(`Exported ${allLeads.length} leads from ${selectedBatchIds.size} batch${selectedBatchIds.size > 1 ? 'es' : ''}`);
+  };
+
   const activeBatch = batches.find((b) => b.id === activeBatchId);
-  const leadCount = activeBatch ? (leadsByBatch[activeBatch.id] || []).length : 0;
+  const selectedBatches = batches.filter(b => selectedBatchIds.has(b.id));
+  const totalLeadsToDelete = selectedBatchIds.size > 0
+    ? selectedBatches.reduce((sum, batch) => sum + (leadsByBatch[batch.id]?.length || 0), 0)
+    : activeBatch ? (leadsByBatch[activeBatch.id] || []).length : 0;
 
   const handleBatchToggle = (batchId: string) => {
     setExpandedBatches((prev) => {
@@ -109,106 +173,43 @@ export const Sidebar = ({
     onBatchClick(batchId);
   };
 
-  // NEW: Multi-select handlers
   const handleBatchSelect = (batchId: string, event: React.MouseEvent) => {
-  event.stopPropagation();
-  event.preventDefault(); // Prevent text selection on shift+click
-  
-  if (event.shiftKey && lastSelectedBatchId) {
-    // Range selection
-    const currentIndex = filteredBatches.findIndex(b => b.id === batchId);
-    const lastIndex = filteredBatches.findIndex(b => b.id === lastSelectedBatchId);
-    const start = Math.min(currentIndex, lastIndex);
-    const end = Math.max(currentIndex, lastIndex);
+    event.stopPropagation();
+    event.preventDefault();
     
-    const newSelected = new Set(selectedBatchIds);
-    for (let i = start; i <= end; i++) {
-      newSelected.add(filteredBatches[i].id);
-    }
-    setSelectedBatchIds(newSelected);
-  } else if (event.metaKey || event.ctrlKey) {
-    // Toggle individual
-    const newSelected = new Set(selectedBatchIds);
-    if (newSelected.has(batchId)) {
-      newSelected.delete(batchId);
-    } else {
-      newSelected.add(batchId);
-    }
-    setSelectedBatchIds(newSelected);
-    setLastSelectedBatchId(batchId);
-  } else {
-    // Single click on checkbox - toggle this one
-    const newSelected = new Set(selectedBatchIds);
-    if (newSelected.has(batchId)) {
-      newSelected.delete(batchId);
-    } else {
-      newSelected.add(batchId);
-    }
-    setSelectedBatchIds(newSelected);
-    setLastSelectedBatchId(batchId);
-  }    
-    setLastSelectedBatchId(batchId);
-  };
-
-  const handleDeselectAll = () => {
-    setSelectedBatchIds(new Set());
-    setSelectedLeadIds(new Set());
-    setLastSelectedBatchId(null);
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedBatchIds.size === 0) return;
-    
-    const confirmMessage = `Delete ${selectedBatchIds.size} batch${selectedBatchIds.size > 1 ? 'es' : ''}? This action cannot be undone.`;
-    if (!confirm(confirmMessage)) return;
-    
-    try {
-      // Delete all selected batches
-      for (const batchId of selectedBatchIds) {
-        await onDeleteBatch(batchId);
+    if (event.shiftKey && lastSelectedBatchId) {
+      // Range selection
+      const currentIndex = filteredBatches.findIndex(b => b.id === batchId);
+      const lastIndex = filteredBatches.findIndex(b => b.id === lastSelectedBatchId);
+      const start = Math.min(currentIndex, lastIndex);
+      const end = Math.max(currentIndex, lastIndex);
+      
+      const newSelected = new Set(selectedBatchIds);
+      for (let i = start; i <= end; i++) {
+        newSelected.add(filteredBatches[i].id);
       }
-      onToast(`${selectedBatchIds.size} batch${selectedBatchIds.size > 1 ? 'es' : ''} deleted`);
-      handleDeselectAll();
-    } catch (error) {
-      onToast('Failed to delete batches');
+      setSelectedBatchIds(newSelected);
+    } else if (event.metaKey || event.ctrlKey) {
+      // Toggle individual
+      const newSelected = new Set(selectedBatchIds);
+      if (newSelected.has(batchId)) {
+        newSelected.delete(batchId);
+      } else {
+        newSelected.add(batchId);
+      }
+      setSelectedBatchIds(newSelected);
+      setLastSelectedBatchId(batchId);
+    } else {
+      // Single click on checkbox - toggle this one
+      const newSelected = new Set(selectedBatchIds);
+      if (newSelected.has(batchId)) {
+        newSelected.delete(batchId);
+      } else {
+        newSelected.add(batchId);
+      }
+      setSelectedBatchIds(newSelected);
+      setLastSelectedBatchId(batchId);
     }
-  };
-
-  const handleBulkExport = () => {
-    if (selectedBatchIds.size === 0) return;
-    
-    // Collect all leads from selected batches
-    const allLeads: SuccessfulScrape[] = [];
-    selectedBatchIds.forEach(batchId => {
-      const leads = leadsByBatch[batchId] || [];
-      allLeads.push(...leads);
-    });
-    
-    // Create CSV
-    const headers = ['Company', 'Website', 'Industry', 'Emails', 'Batch'];
-    const rows = allLeads.map(lead => [
-      lead.company || '',
-      lead.website || '',
-      lead.industry || '',
-      (lead.emails || []).join('; '),
-      batches.find(b => b.id === lead.batch_id)?.label || ''
-    ]);
-    
-    const csv = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-    
-    // Download
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `nessie-export-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    onToast(`Exported ${allLeads.length} leads from ${selectedBatchIds.size} batch${selectedBatchIds.size > 1 ? 'es' : ''}`);
   };
 
   const filteredBatches = useMemo(() => {
@@ -268,14 +269,33 @@ export const Sidebar = ({
           >
             <RefreshCw size={14} style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }} />
           </button>
+          {selectedBatchIds.size > 0 && (
+            <button
+              className="sidebar-toggle"
+              onClick={handleExportClick}
+              title={`Export ${selectedBatchIds.size} batch${selectedBatchIds.size > 1 ? 'es' : ''}`}
+              style={{
+                background: 'var(--accent)',
+                color: '#021014',
+              }}
+            >
+              <Download size={14} />
+            </button>
+          )}
           <button
             className="sidebar-toggle"
             onClick={handleDeleteClick}
-            title="Delete batch (Del)"
-            disabled={!activeBatchId}
+            title={
+              selectedBatchIds.size > 0 
+                ? `Delete ${selectedBatchIds.size} selected batch${selectedBatchIds.size > 1 ? 'es' : ''}` 
+                : "Delete batch (Del)"
+            }
+            disabled={!activeBatchId && selectedBatchIds.size === 0}
             style={{
-              opacity: !activeBatchId ? 0.3 : 1,
-              cursor: !activeBatchId ? 'not-allowed' : 'pointer',
+              opacity: (!activeBatchId && selectedBatchIds.size === 0) ? 0.3 : 1,
+              cursor: (!activeBatchId && selectedBatchIds.size === 0) ? 'not-allowed' : 'pointer',
+              background: selectedBatchIds.size > 0 ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
+              color: selectedBatchIds.size > 0 ? 'rgb(239, 68, 68)' : 'inherit',
             }}
           >
             <Trash2 size={14} />
@@ -331,92 +351,6 @@ export const Sidebar = ({
         </div>
       </div>
 
-      {/* NEW: Bulk Actions Bar */}
-      {selectedBatchIds.size > 0 && (
-        <div style={{
-          padding: '12px 16px',
-          background: 'rgba(20, 184, 166, 0.1)',
-          border: '1px solid rgba(20, 184, 166, 0.3)',
-          borderRadius: '8px',
-          margin: '12px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
-          <div style={{
-            fontSize: '13px',
-            fontWeight: 500,
-            color: 'var(--accent)',
-          }}>
-            {selectedBatchIds.size} batch{selectedBatchIds.size > 1 ? 'es' : ''} selected
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={handleBulkExport}
-              style={{
-                padding: '6px 12px',
-                background: 'var(--accent)',
-                color: '#021014',
-                border: 'none',
-                borderRadius: '4px',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'opacity 0.2s',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-            >
-              Export
-            </button>
-            <button
-              onClick={handleBulkDelete}
-              style={{
-                padding: '6px 12px',
-                background: 'rgba(239, 68, 68, 0.1)',
-                color: 'rgb(239, 68, 68)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: '4px',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
-              }}
-            >
-              Delete
-            </button>
-            <button
-              onClick={handleDeselectAll}
-              style={{
-                padding: '6px 12px',
-                background: 'transparent',
-                color: 'var(--text-secondary)',
-                border: '1px solid var(--border)',
-                borderRadius: '4px',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
       <div className="batch-list">
         {batches.length === 0 ? (
           <div className="empty-sidebar">
@@ -445,10 +379,14 @@ export const Sidebar = ({
         )}
       </div>
 
-      {showDeleteDialog && activeBatch && (
+      {showDeleteDialog && (
         <ConfirmDialog
-          title="Delete Batch"
-          message={`Are you sure you want to delete this batch? This will also delete all ${leadCount} leads associated with it. This action cannot be undone.`}
+          title={selectedBatchIds.size > 0 ? "Delete Multiple Batches" : "Delete Batch"}
+          message={
+            selectedBatchIds.size > 0
+              ? `Are you sure you want to delete ${selectedBatchIds.size} batch${selectedBatchIds.size > 1 ? 'es' : ''}? This will also delete all ${totalLeadsToDelete} leads associated with them. This action cannot be undone.`
+              : `Are you sure you want to delete this batch? This will also delete all ${totalLeadsToDelete} leads associated with it. This action cannot be undone.`
+          }
           confirmText="Delete"
           cancelText="Cancel"
           isDestructive={true}
