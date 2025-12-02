@@ -111,33 +111,43 @@ export const Sidebar = ({
 
   // NEW: Multi-select handlers
   const handleBatchSelect = (batchId: string, event: React.MouseEvent) => {
-    event.stopPropagation();
+  event.stopPropagation();
+  event.preventDefault(); // Prevent text selection on shift+click
+  
+  if (event.shiftKey && lastSelectedBatchId) {
+    // Range selection
+    const currentIndex = filteredBatches.findIndex(b => b.id === batchId);
+    const lastIndex = filteredBatches.findIndex(b => b.id === lastSelectedBatchId);
+    const start = Math.min(currentIndex, lastIndex);
+    const end = Math.max(currentIndex, lastIndex);
     
-    if (event.shiftKey && lastSelectedBatchId) {
-      // Range selection
-      const currentIndex = filteredBatches.findIndex(b => b.id === batchId);
-      const lastIndex = filteredBatches.findIndex(b => b.id === lastSelectedBatchId);
-      const start = Math.min(currentIndex, lastIndex);
-      const end = Math.max(currentIndex, lastIndex);
-      
-      const newSelected = new Set(selectedBatchIds);
-      for (let i = start; i <= end; i++) {
-        newSelected.add(filteredBatches[i].id);
-      }
-      setSelectedBatchIds(newSelected);
-    } else if (event.metaKey || event.ctrlKey) {
-      // Toggle individual
-      const newSelected = new Set(selectedBatchIds);
-      if (newSelected.has(batchId)) {
-        newSelected.delete(batchId);
-      } else {
-        newSelected.add(batchId);
-      }
-      setSelectedBatchIds(newSelected);
-    } else {
-      // Single selection
-      setSelectedBatchIds(new Set([batchId]));
+    const newSelected = new Set(selectedBatchIds);
+    for (let i = start; i <= end; i++) {
+      newSelected.add(filteredBatches[i].id);
     }
+    setSelectedBatchIds(newSelected);
+  } else if (event.metaKey || event.ctrlKey) {
+    // Toggle individual
+    const newSelected = new Set(selectedBatchIds);
+    if (newSelected.has(batchId)) {
+      newSelected.delete(batchId);
+    } else {
+      newSelected.add(batchId);
+    }
+    setSelectedBatchIds(newSelected);
+    setLastSelectedBatchId(batchId);
+  } else {
+    // Single click on checkbox - toggle this one
+    const newSelected = new Set(selectedBatchIds);
+    if (newSelected.has(batchId)) {
+      newSelected.delete(batchId);
+    } else {
+      newSelected.add(batchId);
+    }
+    setSelectedBatchIds(newSelected);
+    setLastSelectedBatchId(batchId);
+  }
+};
     
     setLastSelectedBatchId(batchId);
   };
