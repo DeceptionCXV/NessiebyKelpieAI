@@ -8,10 +8,12 @@ interface BatchCardProps {
   leads: SuccessfulScrape[];
   isActive: boolean;
   isExpanded: boolean;
+  isSelected: boolean;  // NEW
   activeLeadId: string | null;
   onClick: () => void;
   onToggleExpand: () => void;
   onLeadClick: (leadId: string) => void;
+  onSelect: (e: React.MouseEvent) => void;  // NEW
 }
 
 export const BatchCard = ({
@@ -19,10 +21,12 @@ export const BatchCard = ({
   leads,
   isActive,
   isExpanded,
+  isSelected,  // NEW
   activeLeadId,
   onClick,
   onToggleExpand,
   onLeadClick,
+  onSelect,  // NEW
 }: BatchCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const leadsCount = leads.length;
@@ -33,16 +37,18 @@ export const BatchCard = ({
   const status = isComplete ? 'complete' : isProcessing ? 'processing' : 'pending';
 
   const handleBatchClick = (e: React.MouseEvent) => {
-    // Don't trigger on chevron click
-    if ((e.target as HTMLElement).closest('.batch-toggle')) {
+    // Don't trigger on chevron click or checkbox click
+    if ((e.target as HTMLElement).closest('.batch-toggle') || 
+        (e.target as HTMLElement).closest('.batch-checkbox')) {
       return;
     }
     onClick();
   };
 
   const handleBatchDoubleClick = (e: React.MouseEvent) => {
-    // Don't trigger on chevron double-click
-    if ((e.target as HTMLElement).closest('.batch-toggle')) {
+    // Don't trigger on chevron double-click or checkbox
+    if ((e.target as HTMLElement).closest('.batch-toggle') || 
+        (e.target as HTMLElement).closest('.batch-checkbox')) {
       return;
     }
     onToggleExpand();
@@ -51,6 +57,11 @@ export const BatchCard = ({
   const handleToggleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onToggleExpand();
+  };
+
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSelect(e);
   };
 
   return (
@@ -66,38 +77,82 @@ export const BatchCard = ({
           borderRadius: '8px',
           cursor: 'pointer',
           marginBottom: '8px',
-          background: isActive 
+          background: isSelected
+            ? 'rgba(20, 184, 166, 0.15)'
+            : isActive 
             ? 'rgba(20, 184, 166, 0.1)' 
             : isHovered 
             ? 'rgba(255, 255, 255, 0.05)' 
             : 'transparent',
-          border: isActive ? '1px solid rgba(20, 184, 166, 0.3)' : '1px solid transparent',
+          border: isSelected 
+            ? '1px solid rgba(20, 184, 166, 0.5)'
+            : isActive 
+            ? '1px solid rgba(20, 184, 166, 0.3)' 
+            : '1px solid transparent',
           transition: 'all 0.2s',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontSize: '14px',
-              fontWeight: 500,
-              color: 'var(--text)',
-              marginBottom: '4px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}>
-              {batch.label}
+          {/* NEW: Checkbox (visible on hover or when selected) */}
+          <div style={{ display: 'flex', alignItems: 'start', gap: '10px', flex: 1, minWidth: 0 }}>
+            <div
+              className="batch-checkbox"
+              onClick={handleCheckboxClick}
+              style={{
+                width: '16px',
+                height: '16px',
+                marginTop: '2px',
+                borderRadius: '3px',
+                border: isSelected 
+                  ? '2px solid var(--accent)' 
+                  : '2px solid rgba(148, 163, 184, 0.4)',
+                background: isSelected ? 'var(--accent)' : 'transparent',
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'all 0.2s',
+                opacity: isHovered || isSelected ? 1 : 0,
+                pointerEvents: isHovered || isSelected ? 'auto' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {isSelected && (
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                  <path
+                    d="M1 5L4 8L9 2"
+                    stroke="#021014"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
             </div>
-            <div style={{
-              fontSize: '12px',
-              color: 'var(--text-secondary)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}>
-              <span>{leadsCount} leads</span>
-              <span>•</span>
-              <span>{new Date(batch.created_at).toLocaleDateString()}</span>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontSize: '14px',
+                fontWeight: 500,
+                color: 'var(--text)',
+                marginBottom: '4px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
+                {batch.label}
+              </div>
+              <div style={{
+                fontSize: '12px',
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+                <span>{leadsCount} leads</span>
+                <span>•</span>
+                <span>{new Date(batch.created_at).toLocaleDateString()}</span>
+              </div>
             </div>
           </div>
 
