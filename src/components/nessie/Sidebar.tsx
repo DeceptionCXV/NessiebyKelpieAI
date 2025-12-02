@@ -241,169 +241,193 @@ export const Sidebar = ({
   }, [batches, leadsByBatch, searchQuery]);
 
   return (
-    <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
-      <div className="sidebar-header">
-        <div className="sidebar-title">Batches</div>
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-          <button
-            className="sidebar-toggle"
-            onClick={() => {
-              onCreateNewBatch();
-              onToast('Create a new batch');
-            }}
-            title="Create new batch"
-            style={{ background: 'var(--accent)', color: '#021014', fontWeight: 600 }}
-          >
-            +
-          </button>
-          <button
-            className="sidebar-toggle"
-            onClick={handleRefresh}
-            title="Refresh batches"
-            disabled={isRefreshing}
-            style={{
-              opacity: isRefreshing ? 0.5 : 1,
-              cursor: isRefreshing ? 'not-allowed' : 'pointer',
-            }}
-          >
-            <RefreshCw size={14} style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }} />
-          </button>
-          {selectedBatchIds.size > 0 && (
+  <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+    {!isCollapsed && (
+      <>
+        <div className="sidebar-header">
+          <div className="sidebar-title">Batches</div>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
             <button
               className="sidebar-toggle"
-              onClick={handleExportClick}
-              title={`Export ${selectedBatchIds.size} batch${selectedBatchIds.size > 1 ? 'es' : ''}`}
+              onClick={() => {
+                onCreateNewBatch();
+                onToast('Create a new batch');
+              }}
+              title="Create new batch"
+              style={{ background: 'var(--accent)', color: '#021014', fontWeight: 600 }}
+            >
+              +
+            </button>
+            <button
+              className="sidebar-toggle"
+              onClick={handleRefresh}
+              title="Refresh batches"
+              disabled={isRefreshing}
               style={{
-                background: 'var(--accent)',
-                color: '#021014',
+                opacity: isRefreshing ? 0.5 : 1,
+                cursor: isRefreshing ? 'not-allowed' : 'pointer',
               }}
             >
-              <Download size={14} />
+              <RefreshCw size={14} style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }} />
             </button>
-          )}
-          <button
-            className="sidebar-toggle"
-            onClick={handleDeleteClick}
-            title={
-              selectedBatchIds.size > 0 
-                ? `Delete ${selectedBatchIds.size} selected batch${selectedBatchIds.size > 1 ? 'es' : ''}` 
-                : "Delete batch (Del)"
-            }
-            disabled={!activeBatchId && selectedBatchIds.size === 0}
-            style={{
-              opacity: (!activeBatchId && selectedBatchIds.size === 0) ? 0.3 : 1,
-              cursor: (!activeBatchId && selectedBatchIds.size === 0) ? 'not-allowed' : 'pointer',
-              background: selectedBatchIds.size > 0 ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
-              color: selectedBatchIds.size > 0 ? 'rgb(239, 68, 68)' : 'inherit',
-            }}
-          >
-            <Trash2 size={14} />
-          </button>
-          <button
-            className="sidebar-toggle"
-            onClick={handleToggle}
-            title="Collapse sidebar"
-          >
-            ☰
-          </button>
-        </div>
-      </div>
-
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ position: 'relative' }}>
-          <Search
-            size={16}
-            style={{
-              position: 'absolute',
-              left: '10px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--text-secondary)',
-              pointerEvents: 'none',
-            }}
-          />
-          <input
-            type="text"
-            placeholder="Search batches, websites, emails..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px 12px 8px 32px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid var(--border)',
-              borderRadius: '6px',
-              color: 'var(--text)',
-              fontSize: '13px',
-              outline: 'none',
-              transition: 'all 0.2s ease',
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-              e.currentTarget.style.borderColor = 'var(--accent)';
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-              e.currentTarget.style.borderColor = 'var(--border)';
-            }}
-          />
-        </div>
-      </div>
-
-      <div className="batch-list">
-        {batches.length === 0 ? (
-          <div className="empty-sidebar">
-            No batches yet. Create a batch on the right to let Nessie hunt.
+            {selectedBatchIds.size > 0 && (
+              <button
+                className="sidebar-toggle"
+                onClick={handleExportClick}
+                title={`Export ${selectedBatchIds.size} batch${selectedBatchIds.size > 1 ? 'es' : ''}`}
+                style={{
+                  background: 'var(--accent)',
+                  color: '#021014',
+                }}
+              >
+                <Download size={14} />
+              </button>
+            )}
+            <button
+              className="sidebar-toggle"
+              onClick={handleDeleteClick}
+              title={
+                selectedBatchIds.size > 0 
+                  ? `Delete ${selectedBatchIds.size} selected batch${selectedBatchIds.size > 1 ? 'es' : ''}` 
+                  : "Delete batch (Del)"
+              }
+              disabled={!activeBatchId && selectedBatchIds.size === 0}
+              style={{
+                opacity: (!activeBatchId && selectedBatchIds.size === 0) ? 0.3 : 1,
+                cursor: (!activeBatchId && selectedBatchIds.size === 0) ? 'not-allowed' : 'pointer',
+                background: selectedBatchIds.size > 0 ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
+                color: selectedBatchIds.size > 0 ? 'rgb(239, 68, 68)' : 'inherit',
+              }}
+            >
+              <Trash2 size={14} />
+            </button>
+            <button
+              className="sidebar-toggle"
+              onClick={handleToggle}
+              title="Collapse sidebar"
+            >
+              ☰
+            </button>
           </div>
-        ) : filteredBatches.length === 0 ? (
-          <div className="empty-sidebar">
-            No results found for "{searchQuery}"
-          </div>
-        ) : (
-          filteredBatches.map((batch) => (
-            <BatchCard
-              key={batch.id}
-              batch={batch}
-              leads={leadsByBatch[batch.id] || []}
-              isActive={batch.id === activeBatchId}
-              isExpanded={expandedBatches.has(batch.id)}
-              isSelected={selectedBatchIds.has(batch.id)}
-              activeLeadId={activeLeadId}
-              onClick={() => handleBatchClickWithExpand(batch.id)}
-              onToggleExpand={() => handleBatchToggle(batch.id)}
-              onLeadClick={(leadId) => handleLeadClickWithExpand(leadId)}
-              onSelect={(e) => handleBatchSelect(batch.id, e)}
+        </div>
+
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ position: 'relative' }}>
+            <Search
+              size={16}
+              style={{
+                position: 'absolute',
+                left: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--text-secondary)',
+                pointerEvents: 'none',
+              }}
             />
-          ))
-        )}
+            <input
+              type="text"
+              placeholder="Search batches, websites, emails..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px 8px 32px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid var(--border)',
+                borderRadius: '6px',
+                color: 'var(--text)',
+                fontSize: '13px',
+                outline: 'none',
+                transition: 'all 0.2s ease',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                e.currentTarget.style.borderColor = 'var(--accent)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.borderColor = 'var(--border)';
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="batch-list">
+          {batches.length === 0 ? (
+            <div className="empty-sidebar">
+              No batches yet. Create a batch on the right to let Nessie hunt.
+            </div>
+          ) : filteredBatches.length === 0 ? (
+            <div className="empty-sidebar">
+              No results found for "{searchQuery}"
+            </div>
+          ) : (
+            filteredBatches.map((batch) => (
+              <BatchCard
+                key={batch.id}
+                batch={batch}
+                leads={leadsByBatch[batch.id] || []}
+                isActive={batch.id === activeBatchId}
+                isExpanded={expandedBatches.has(batch.id)}
+                isSelected={selectedBatchIds.has(batch.id)}
+                activeLeadId={activeLeadId}
+                onClick={() => handleBatchClickWithExpand(batch.id)}
+                onToggleExpand={() => handleBatchToggle(batch.id)}
+                onLeadClick={(leadId) => handleLeadClickWithExpand(leadId)}
+                onSelect={(e) => handleBatchSelect(batch.id, e)}
+              />
+            ))
+          )}
+        </div>
+      </>
+    )}
+
+    {/* Collapsed state - just show the hamburger button */}
+    {isCollapsed && (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        paddingTop: '16px',
+      }}>
+        <button
+          className="sidebar-toggle"
+          onClick={handleToggle}
+          title="Expand sidebar"
+          style={{
+            background: 'var(--accent)',
+            color: '#021014',
+          }}
+        >
+          ☰
+        </button>
       </div>
+    )}
 
-      {showDeleteDialog && (
-        <ConfirmDialog
-          title={selectedBatchIds.size > 0 ? "Delete Multiple Batches" : "Delete Batch"}
-          message={
-            selectedBatchIds.size > 0
-              ? `Are you sure you want to delete ${selectedBatchIds.size} batch${selectedBatchIds.size > 1 ? 'es' : ''}? This will also delete all ${totalLeadsToDelete} leads associated with them. This action cannot be undone.`
-              : `Are you sure you want to delete this batch? This will also delete all ${totalLeadsToDelete} leads associated with it. This action cannot be undone.`
-          }
-          confirmText="Delete"
-          cancelText="Cancel"
-          isDestructive={true}
-          onConfirm={handleDeleteConfirm}
-          onCancel={() => setShowDeleteDialog(false)}
-        />
-      )}
-
-      <style>{`
-        @keyframes spin {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
+    {showDeleteDialog && (
+      <ConfirmDialog
+        title={selectedBatchIds.size > 0 ? "Delete Multiple Batches" : "Delete Batch"}
+        message={
+          selectedBatchIds.size > 0
+            ? `Are you sure you want to delete ${selectedBatchIds.size} batch${selectedBatchIds.size > 1 ? 'es' : ''}? This will also delete all ${totalLeadsToDelete} leads associated with them. This action cannot be undone.`
+            : `Are you sure you want to delete this batch? This will also delete all ${totalLeadsToDelete} leads associated with it. This action cannot be undone.`
         }
-      `}</style>
-    </aside>
-  );
-};
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDestructive={true}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteDialog(false)}
+      />
+    )}
+
+    <style>{`
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    `}</style>
+  </aside>
+);
