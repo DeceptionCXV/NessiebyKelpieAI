@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 export interface SuccessfulScrape {
   id: string;
   website: string;
+  domain?: string;
   company: string | null;
   batch_id: string;
   batch_uuid: string;
@@ -14,6 +15,13 @@ export interface SuccessfulScrape {
   subject: string | null;
   message: string | null;
   status: string;
+  
+  // NEW: Lead tracking fields
+  lead_status?: 'new' | 'contacted' | 'replied' | 'qualified' | 'dead';
+  tags?: string[];
+  contacted_at?: string;
+  viewed_at?: string;
+  notes?: string;
 }
 
 export const useLeads = (batchId: string | null) => {
@@ -72,5 +80,64 @@ export const useLeads = (batchId: string | null) => {
     };
   }, [batchId]);
 
-  return { leads, loading };
+  // NEW: Update lead function
+  const updateLead = async (leadId: string, updates: Partial<SuccessfulScrape>) => {
+    try {
+      console.log('[useLeads] Updating lead:', leadId, updates);
+      
+      const { error } = await supabase
+        .from('successful_scrapes')
+        .update(updates)
+        .eq('id', leadId);
+
+      if (error) {
+        console.error('[useLeads] Error updating lead:', error);
+        throw error;
+      }
+
+      // Optimistically update local state
+      setLeads((prev) =>
+        prev.map((lead) =>
+          lead.id === leadId ? { ...lead, ...updates } : lead
+        )
+      );
+
+      return { error: null };
+    } catch (error) {
+      console.error('[useLeads] Error updating lead (caught):', error);
+      return { error };
+    }
+  };
+
+  // NEW: Delete lead function
+  const deleteLead = async (leadId: string) => {
+    try {
+      console.log('[useLeads] Deleting lead:', leadId);
+      
+      const { error } = await supabase
+        .from('successful_scrapes')
+        .delete()
+        .eq('id', leadId);
+
+      if (error) {
+        console.error('[useLeads] Error deleting lead:', error);
+        throw error;
+      }
+
+      // Optimistically remove from local state
+      setLeads((prev) => prev.filter((lead) => lead.id !== leadId));
+
+      return { error: null };
+    } catch (error) {
+      console.error('[useLeads] Error deleting lead (caught):', error);
+      return { error };
+    }
+  };
+
+  return { 
+    leads, 
+    loading,
+    updateLead,
+    deleteLead,
+  };
 };
