@@ -1,6 +1,9 @@
 export type FailedScrapeStatus = 'failed' | 'retrying' | 'resolved';
 export type SuccessfulScrapeStatus = 'success' | 'resolved';
 
+// New: Lead status for tracking pipeline
+export type LeadStatus = 'new' | 'contacted' | 'replied' | 'qualified' | 'dead';
+
 export interface FailedScrape {
   id: string;
   website: string;
@@ -45,10 +48,34 @@ export interface MakeRetryPayload {
 export interface SuccessfulScrape {
   id: string;
   website: string;
+  domain?: string;
   batch_id: string;
   timestamp: string;
   status: SuccessfulScrapeStatus;
   created_at: string;
+  
+  // Lead data
+  company?: string;
+  industry?: string;
+  emails?: string[];
+  icebreaker?: string;
+  subject?: string;
+  message?: string;
+  
+  // NEW: Lead tracking fields
+  lead_status?: LeadStatus;
+  tags?: string[];
+  contacted_at?: string;
+  viewed_at?: string;
+  notes?: string;
+  
+  // NEW: Social/contact info (for future Smart Info)
+  phone?: string;
+  linkedin?: string;
+  twitter?: string;
+  facebook?: string;
+  location?: string;
+  company_size?: string;
 }
 
 export interface ScrapeSuccessPayload {
