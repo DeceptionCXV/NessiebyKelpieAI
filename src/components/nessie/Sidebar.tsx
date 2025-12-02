@@ -146,9 +146,7 @@ export const Sidebar = ({
     }
     setSelectedBatchIds(newSelected);
     setLastSelectedBatchId(batchId);
-  }
-};
-    
+  }    
     setLastSelectedBatchId(batchId);
   };
 
