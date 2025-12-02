@@ -78,6 +78,7 @@ export const BatchCard = ({
           borderRadius: '8px',
           cursor: 'pointer',
           marginBottom: '8px',
+          userSelect: 'none',
           background: isSelected
             ? 'rgba(20, 184, 166, 0.15)'
             : isActive 
