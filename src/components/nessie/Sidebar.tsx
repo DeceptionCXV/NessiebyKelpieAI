@@ -35,7 +35,9 @@ export const Sidebar = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
+  const [selectedBatchIds, setSelectedBatchIds] = useState<Set<string>>(new Set());
+  const [lastSelectedBatchId, setLastSelectedBatchId] = useState<string | null>(null);
+  const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
   console.log('Sidebar rendering with batches:', batches);
 
   const handleToggle = () => {
