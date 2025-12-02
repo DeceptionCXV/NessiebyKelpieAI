@@ -1,6 +1,7 @@
 import type { Batch } from '../../hooks/useBatches';
 import type { SuccessfulScrape } from '../../types/nessie';
 import { ChevronRight, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 
 interface BatchCardProps {
   batch: Batch;
@@ -23,6 +24,7 @@ export const BatchCard = ({
   onToggleExpand,
   onLeadClick,
 }: BatchCardProps) => {
+  const [isHovered, setIsHovered] = useState(false);
   const leadsCount = leads.length;
   
   // Calculate status based on processed count
@@ -31,10 +33,19 @@ export const BatchCard = ({
   const status = isComplete ? 'complete' : isProcessing ? 'processing' : 'pending';
 
   const handleBatchClick = (e: React.MouseEvent) => {
+    // Don't trigger on chevron click
     if ((e.target as HTMLElement).closest('.batch-toggle')) {
       return;
     }
     onClick();
+  };
+
+  const handleBatchDoubleClick = (e: React.MouseEvent) => {
+    // Don't trigger on chevron double-click
+    if ((e.target as HTMLElement).closest('.batch-toggle')) {
+      return;
+    }
+    onToggleExpand();
   };
 
   const handleToggleClick = (e: React.MouseEvent) => {
@@ -47,12 +58,19 @@ export const BatchCard = ({
       <div
         className={`batch-card ${isActive ? 'active' : ''}`}
         onClick={handleBatchClick}
+        onDoubleClick={handleBatchDoubleClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         style={{
           padding: '12px 16px',
           borderRadius: '8px',
           cursor: 'pointer',
           marginBottom: '8px',
-          background: isActive ? 'rgba(20, 184, 166, 0.1)' : 'transparent',
+          background: isActive 
+            ? 'rgba(20, 184, 166, 0.1)' 
+            : isHovered 
+            ? 'rgba(255, 255, 255, 0.05)' 
+            : 'transparent',
           border: isActive ? '1px solid rgba(20, 184, 166, 0.3)' : '1px solid transparent',
           transition: 'all 0.2s',
         }}
@@ -126,7 +144,7 @@ export const BatchCard = ({
                   transition: 'all 0.2s',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = 'transparent';
