@@ -10,7 +10,7 @@ import { useBatches } from '../hooks/useBatches';
 import { useLeads } from '../hooks/useLeads';
 import { useToast } from '../hooks/useToast';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import type { SuccessfulScrape } from '../types/nessie';
+import type { SuccessfulScrape } from '../hooks/useLeads';
 import '../styles/nessie.css';
 
 interface LeadTab {
@@ -27,7 +27,7 @@ export const NessieQueue = () => {
   const [loadingLead, setLoadingLead] = useState(false);
 
   const { batches, deleteBatch, refreshBatches } = useBatches();
-  const { leads } = useLeads(activeBatchId);
+  const { leads, updateLead, deleteLead } = useLeads(activeBatchId);
   const { toasts, showToast, removeToast } = useToast();
 
   useEffect(() => {
@@ -76,6 +76,95 @@ export const NessieQueue = () => {
     showToast('Batch deleted');
   };
 
+  // NEW: Handle lead updates (status, tags, etc.)
+  const handleLeadUpdate = async (leadId: string, updates: Partial<SuccessfulScrape>) => {
+    console.log('[NessieQueue] Updating lead:', leadId, updates);
+    
+    const { error } = await updateLead(leadId, updates);
+    
+    if (error) {
+      showToast('Failed to update lead');
+      console.error('Error updating lead:', error);
+      return;
+    }
+
+    // Update the lead in tabs if it's open
+    setOpenTabs((prev) =>
+      prev.map((tab) =>
+        tab.leadId === leadId
+          ? { ...tab, lead: { ...tab.lead, ...updates } }
+          : tab
+      )
+    );
+
+    // Update leadsByBatch cache
+    if (activeBatchId) {
+      setLeadsByBatch((prev) => ({
+        ...prev,
+        [activeBatchId]: (prev[activeBatchId] || []).map((lead) =>
+          lead.id === leadId ? { ...lead, ...updates } : lead
+        ),
+      }));
+    }
+  };
+
+  // NEW: Handle lead deletion
+  const handleLeadDelete = async (leadId: string) => {
+    console.log('[NessieQueue] Deleting lead:', leadId);
+    
+    const { error } = await deleteLead(leadId);
+    
+    if (error) {
+      showToast('Failed to delete lead');
+      console.error('Error deleting lead:', error);
+      return;
+    }
+
+    // Close the tab if it's open
+    setOpenTabs((prev) => prev.filter((tab) => tab.leadId !== leadId));
+
+    // If this was the active lead, select another one
+    if (activeLeadId === leadId && activeBatchId) {
+      const remainingLeads = leadsByBatch[activeBatchId]?.filter((l) => l.id !== leadId) || [];
+      if (remainingLeads.length > 0) {
+        openLead(remainingLeads[0], activeBatchId);
+      } else {
+        setActiveLeadId(null);
+      }
+    }
+
+    // Update leadsByBatch cache
+    if (activeBatchId) {
+      setLeadsByBatch((prev) => ({
+        ...prev,
+        [activeBatchId]: (prev[activeBatchId] || []).filter((lead) => lead.id !== leadId),
+      }));
+    }
+
+    showToast('Lead deleted');
+  };
+
+  // NEW: Handle lead navigation (prev/next)
+  const handleLeadNavigate = (direction: 'prev' | 'next') => {
+    if (!activeBatchId) return;
+
+    const currentLeads = leadsByBatch[activeBatchId] || [];
+    const currentIndex = currentLeads.findIndex((l) => l.id === activeLeadId);
+
+    if (currentIndex === -1) return;
+
+    let newIndex: number;
+    if (direction === 'prev') {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
+    } else {
+      newIndex = currentIndex < currentLeads.length - 1 ? currentIndex + 1 : currentIndex;
+    }
+
+    if (newIndex !== currentIndex) {
+      openLead(currentLeads[newIndex], activeBatchId);
+    }
+  };
+
   useKeyboardShortcuts({
     onCreateBatch: () => {
       handleCreateNewBatch();
@@ -86,24 +175,8 @@ export const NessieQueue = () => {
         showToast('Note saved');
       }
     },
-    onNavigateUp: () => {
-      if (activeBatchId) {
-        const currentLeads = leadsByBatch[activeBatchId] || [];
-        const currentIndex = currentLeads.findIndex((l) => l.id === activeLeadId);
-        if (currentIndex > 0) {
-          openLead(currentLeads[currentIndex - 1], activeBatchId);
-        }
-      }
-    },
-    onNavigateDown: () => {
-      if (activeBatchId) {
-        const currentLeads = leadsByBatch[activeBatchId] || [];
-        const currentIndex = currentLeads.findIndex((l) => l.id === activeLeadId);
-        if (currentIndex < currentLeads.length - 1 && currentIndex !== -1) {
-          openLead(currentLeads[currentIndex + 1], activeBatchId);
-        }
-      }
-    },
+    onNavigateUp: () => handleLeadNavigate('prev'),
+    onNavigateDown: () => handleLeadNavigate('next'),
     onDeleteBatch: handleDeleteBatch,
   });
 
@@ -170,6 +243,9 @@ export const NessieQueue = () => {
 
   const currentBatch = batches.find((b) => b.id === activeBatchId);
 
+  // Get all leads in current batch for navigation
+  const allLeadsInBatch = activeBatchId ? (leadsByBatch[activeBatchId] || []) : [];
+
   return (
     <div>
       <link
@@ -229,8 +305,12 @@ export const NessieQueue = () => {
                 <LeadDetail
                   lead={currentLead}
                   batch={currentBatch || null}
+                  allLeads={allLeadsInBatch}
                   loading={loadingLead}
                   onToast={showToast}
+                  onLeadUpdate={handleLeadUpdate}
+                  onLeadDelete={handleLeadDelete}
+                  onNavigate={handleLeadNavigate}
                 />
               </section>
 
