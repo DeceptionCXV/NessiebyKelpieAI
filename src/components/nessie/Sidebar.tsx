@@ -42,7 +42,6 @@ export const Sidebar = ({
 
   const handleToggle = () => {
     setIsCollapsed(!isCollapsed);
-    onToast(isCollapsed ? 'Sidebar expanded' : 'Sidebar collapsed');
   };
 
   const handleRefresh = async () => {
