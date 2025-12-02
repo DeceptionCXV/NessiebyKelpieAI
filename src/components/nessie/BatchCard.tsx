@@ -60,10 +60,10 @@ export const BatchCard = ({
   };
 
   const handleCheckboxClick = (e: React.MouseEvent) => {
-  e.stopPropagation();
-  e.preventDefault();
-  onSelect(e);
-};
+    e.stopPropagation();
+    e.preventDefault();
+    onSelect(e);
+  };
 
   return (
     <div className="batch-card-wrapper">
