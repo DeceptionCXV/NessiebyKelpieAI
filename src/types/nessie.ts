@@ -50,26 +50,30 @@ export interface SuccessfulScrape {
   website: string;
   domain?: string;
   batch_id: string;
+  batch_uuid?: string;
   timestamp: string;
   status: SuccessfulScrapeStatus;
   created_at: string;
+  owner_user_id?: string;
   
-  // Lead data
+  // Lead data from scrape
   company?: string;
   industry?: string;
   emails?: string[];
   icebreaker?: string;
+  
+  // Outreach templates
   subject?: string;
   message?: string;
   
-  // NEW: Lead tracking fields
+  // Lead tracking fields
   lead_status?: LeadStatus;
   tags?: string[];
   contacted_at?: string;
   viewed_at?: string;
   notes?: string;
   
-  // NEW: Social/contact info (for future Smart Info)
+  // Social/contact info (for future Smart Info)
   phone?: string;
   linkedin?: string;
   twitter?: string;
