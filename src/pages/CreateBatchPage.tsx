@@ -92,7 +92,7 @@ export const CreateBatchPage = () => {
             batch_id: batch.id,
             batch_uuid: batch.id,
             user_id: user.id, // ADDED: Send user ID to Make
-            webhook_secret: webhookSecret,
+            webhook_secret: import.meta.env.VITE_MAKE_WEBHOOK_SECRET,
             urls: normalizedUrls,
             label: batchName.trim() || `Batch ${Date.now()}`,
             channel,
