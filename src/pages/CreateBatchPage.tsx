@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TopBar } from '../components/nessie/TopBar';
 import { useBatches } from '../hooks/useBatches';
 import { useToast } from '../hooks/useToast';
@@ -15,6 +16,7 @@ export const CreateBatchPage = () => {
 
   const { createBatch, updateBatch } = useBatches();
   const { toasts, showToast, removeToast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,11 +95,11 @@ export const CreateBatchPage = () => {
       }
     }
 
-    window.location.hash = '#/queue';
+    navigate('/queue');
   };
 
   const handleCancel = () => {
-    window.location.hash = '#/queue';
+    navigate('/queue');
   };
 
   return (
@@ -105,12 +107,12 @@ export const CreateBatchPage = () => {
       <TopBar
         activeView="Queue"
         onViewChange={(view) => {
-          if (view === 'Queue') window.location.hash = '#/queue';
-          if (view === 'Analytics') window.location.hash = '#/analytics';
-          if (view === 'Settings') window.location.hash = '#/settings';
+          if (view === 'Queue') navigate('/queue');
+          if (view === 'Analytics') navigate('/analytics');
+          if (view === 'Settings') navigate('/settings');
         }}
         onCreateNewBatch={() => {
-          window.location.hash = '#/queue/new';
+          navigate('/queue/new');
         }}
       />
 
@@ -121,7 +123,11 @@ export const CreateBatchPage = () => {
       }}>
         <div style={{ marginBottom: '24px' }}>
           <a
-            href="#/queue"
+            href="/queue"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/queue');
+            }}
             style={{
               color: '#11c2d2',
               textDecoration: 'none',
