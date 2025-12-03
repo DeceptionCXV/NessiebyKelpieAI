@@ -28,6 +28,37 @@ export const LoginPage = () => {
     }
   };
 
+  // DEV ONLY: Quick login bypass
+  const handleDevLogin = async () => {
+    setError('');
+    setLoading(true);
+    
+    // Use environment variables for dev credentials
+    const devEmail = import.meta.env.VITE_DEV_EMAIL || 'sami.mustafa@kelpieai.co.uk';
+    const devPassword = import.meta.env.VITE_DEV_PASSWORD;
+    
+    if (!devPassword) {
+      setError('Dev password not configured. Set VITE_DEV_PASSWORD in .env.local');
+      setLoading(false);
+      return;
+    }
+    
+    const { data, error } = await signIn(devEmail, devPassword);
+    
+    if (error) {
+      setError('Dev login failed: ' + error.message);
+      setLoading(false);
+      return;
+    }
+    
+    if (data) {
+      navigate('/queue');
+    }
+  };
+
+  // Only show dev button in development mode
+  const isDev = import.meta.env.DEV;
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -201,6 +232,43 @@ export const LoginPage = () => {
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
+
+            {/* DEV ONLY: Quick Login Button */}
+            {isDev && (
+              <button
+                type="button"
+                onClick={handleDevLogin}
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  marginTop: '12px',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  color: '#ef4444',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  fontFamily: "'Space Grotesk', sans-serif",
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                  }
+                }}
+                title="Development quick login - only visible in dev mode"
+              >
+                🚀 Dev Quick Login
+              </button>
+            )}
           </form>
 
           <div style={{
@@ -235,7 +303,7 @@ export const LoginPage = () => {
             fontSize: '13px',
             color: '#64748b',
           }}>
-            Powered by Kelpie AI · Powered By Automation. Built For Performance
+            Powered by Kelpie AI · Version 0.7.1
           </p>
         </div>
       </div>
