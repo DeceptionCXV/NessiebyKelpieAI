@@ -108,8 +108,10 @@ export const CreateBatchPage = () => {
           if (view === 'Queue') window.location.hash = '#/queue';
           if (view === 'Analytics') window.location.hash = '#/analytics';
           if (view === 'Settings') window.location.hash = '#/settings';
-        }} 
-        onNewBatchClick={() => {}} 
+        }}
+        onCreateNewBatch={() => {
+          window.location.hash = '#/queue/new';
+        }}
       />
 
       <div style={{
