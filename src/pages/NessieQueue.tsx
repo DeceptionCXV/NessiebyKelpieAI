@@ -256,7 +256,7 @@ export const NessieQueue = () => {
       <TopBar
         activeView={activeView}
         onViewChange={setActiveView}
-        onNewBatchClick={handleCreateNewBatch}
+        onCreateNewBatch={handleCreateNewBatch}
       />
 
       {activeView === 'Analytics' ? (
