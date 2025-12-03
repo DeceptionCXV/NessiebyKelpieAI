@@ -26,6 +26,90 @@ interface LeadDetailProps {
   onNavigate?: (direction: 'prev' | 'next') => void;
 }
 
+// Dynamic greeting generator with time-based + random variation
+const getEmptyStateGreeting = (userName: string = 'User'): string => {
+  const now = new Date();
+  const hour = now.getHours();
+  const day = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+  // Time-based pools
+  const morningGreetings = [
+    `Good morning, ${userName}!`,
+    `Morning ${userName}, let's crush it!`,
+    `Rise and shine, ${userName}!`,
+    `Morning ${userName}! Ready to hunt?`,
+  ];
+
+  const afternoonGreetings = [
+    `Happy afternoon, ${userName}!`,
+    `Afternoon ${userName}! Feeling productive?`,
+    `Hey ${userName}, ready to dive in?`,
+    `Alright ${userName}, let's hunt!`,
+  ];
+
+  const eveningGreetings = [
+    `Good evening, ${userName}!`,
+    `Evening ${userName}! One last push?`,
+    `Hey ${userName}, wrapping up?`,
+    `Alright ${userName}, let's go!`,
+  ];
+
+  const nightGreetings = [
+    `Still hunting, ${userName}?`,
+    `Burning the midnight oil, ${userName}? 🌙`,
+    `Late night grind, ${userName}!`,
+    `Night owl mode, ${userName}?`,
+  ];
+
+  // Day-specific variations (adds extra personality on specific days)
+  const mondayGreetings = [
+    `Monday blues? Not with these leads, ${userName}!`,
+    `${userName}! How's your Monday shaping up?`,
+    `Let's make this Monday count, ${userName}!`,
+  ];
+
+  const fridayGreetings = [
+    `TGIF, ${userName}! Let's close some deals!`,
+    `Friday energy, ${userName}! 🔥`,
+    `Almost the weekend, ${userName}! Let's finish strong.`,
+  ];
+
+  const weekendGreetings = [
+    `Weekend warrior, ${userName}?`,
+    `Working on a ${day === 0 ? 'Sunday' : 'Saturday'}? Legend, ${userName}!`,
+    `${userName}! Dedication level: 💯`,
+  ];
+
+  // Select greeting based on time and day
+  let greetingPool: string[];
+
+  // Weekend override
+  if (day === 0 || day === 6) {
+    greetingPool = weekendGreetings;
+  }
+  // Monday special
+  else if (day === 1 && Math.random() > 0.5) {
+    greetingPool = mondayGreetings;
+  }
+  // Friday special
+  else if (day === 5 && Math.random() > 0.5) {
+    greetingPool = fridayGreetings;
+  }
+  // Time-based
+  else if (hour >= 5 && hour < 12) {
+    greetingPool = morningGreetings;
+  } else if (hour >= 12 && hour < 17) {
+    greetingPool = afternoonGreetings;
+  } else if (hour >= 17 && hour < 21) {
+    greetingPool = eveningGreetings;
+  } else {
+    greetingPool = nightGreetings;
+  }
+
+  // Return random greeting from selected pool
+  return greetingPool[Math.floor(Math.random() * greetingPool.length)];
+};
+
 export const LeadDetail = ({ 
   lead, 
   batch, 
@@ -98,9 +182,51 @@ Where Marketing Meets Automation`;
 
   if (!lead || !batch) {
     console.log('[LeadDetail] No lead or batch selected');
+    
+    // Dynamic empty state with personalized greeting
+    const greeting = getEmptyStateGreeting('Sami');
+    
     return (
-      <div className="no-lead-selected">
-        Select a lead from the left to see details and generate an outreach message.
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '500px',
+        textAlign: 'center',
+        padding: '80px 40px',
+        fontFamily: "'Space Grotesk', sans-serif",
+      }}>
+        <div style={{
+          fontSize: '64px',
+          marginBottom: '24px',
+        }}>
+          🐉
+        </div>
+        <div style={{
+          fontSize: '36px',
+          fontWeight: 700,
+          color: '#e2e8f0',
+          marginBottom: '12px',
+        }}>
+          {greeting}
+        </div>
+        <div style={{
+          fontSize: '16px',
+          color: '#94a3b8',
+          lineHeight: 1.6,
+          maxWidth: '450px',
+          marginBottom: '24px',
+        }}>
+          Nessie's ready to dive into your leads. Pick a batch from the sidebar and let's see what we can find lurking in the depths.
+        </div>
+        <div style={{
+          fontSize: '14px',
+          color: '#64748b',
+          fontStyle: 'italic',
+        }}>
+          Pro tip: Use keyboard shortcuts to navigate faster
+        </div>
       </div>
     );
   }
