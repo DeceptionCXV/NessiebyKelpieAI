@@ -102,8 +102,8 @@ export const CreateBatchPage = () => {
 
   return (
     <div className="nessie-container">
-      <TopBar 
-        activeView="Queue" 
+      <TopBar
+        activeView="Queue"
         onViewChange={(view) => {
           if (view === 'Queue') window.location.hash = '#/queue';
           if (view === 'Analytics') window.location.hash = '#/analytics';
