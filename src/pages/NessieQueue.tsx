@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TopBar } from '../components/nessie/TopBar';
 import { Sidebar } from '../components/nessie/Sidebar';
 import { TabBar } from '../components/nessie/TabBar';
@@ -26,6 +27,8 @@ export const NessieQueue = () => {
   const [leadsByBatch, setLeadsByBatch] = useState<Record<string, SuccessfulScrape[]>>({});
   const [loadingLead, setLoadingLead] = useState(false);
 
+  const navigate = useNavigate();
+
   const { batches, deleteBatch, refreshBatches } = useBatches();
   const { leads, updateLead, deleteLead } = useLeads(activeBatchId);
   const { toasts, showToast, removeToast } = useToast();
@@ -42,7 +45,7 @@ export const NessieQueue = () => {
 
 
   const handleCreateNewBatch = () => {
-    window.location.hash = '#/queue/new';
+    navigate('/queue/new');
   };
 
   const handleDeleteBatch = async (batchId?: string) => {
@@ -256,7 +259,7 @@ export const NessieQueue = () => {
       <TopBar
         activeView={activeView}
         onViewChange={setActiveView}
-        onNewBatchClick={handleCreateNewBatch}
+        onCreateNewBatch={handleCreateNewBatch}
       />
 
       {activeView === 'Analytics' ? (
