@@ -77,6 +77,7 @@ export const useBatches = () => {
   const createBatch = async (batchData: {
     label: string;
     total_urls: number;
+    user_id: string; // ADDED: Required user ID
     channel?: string;
     subject_template?: string;
     message_template?: string;
@@ -91,6 +92,7 @@ export const useBatches = () => {
           status: 'pending' as const,
           total_urls: batchData.total_urls,
           processed_urls: 0,
+          owner_user_id: batchData.user_id, // ADDED: Store user ID
           channel: batchData.channel || 'dm',
           subject_template: batchData.subject_template,
           message_template: batchData.message_template,
