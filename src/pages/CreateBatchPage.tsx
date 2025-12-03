@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TopBar } from '../components/nessie/TopBar';
 import { useBatches } from '../hooks/useBatches';
+import { useAuth } from '../hooks/useAuth'; // ADDED
 import { useToast } from '../hooks/useToast';
 import { Toast } from '../components/nessie/Toast';
 import '../styles/nessie.css';
@@ -15,11 +16,19 @@ export const CreateBatchPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { createBatch, updateBatch } = useBatches();
+  const { user } = useAuth(); // ADDED: Get current user
   const { toasts, showToast, removeToast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // ADDED: Check if user is logged in
+    if (!user) {
+      showToast('You must be logged in to create a batch');
+      navigate('/login');
+      return;
+    }
 
     const urls = urlsInput
       .split('\n')
@@ -41,6 +50,7 @@ export const CreateBatchPage = () => {
     const { data: batch, error } = await createBatch({
       label: batchName.trim() || `Batch ${Date.now()}`,
       total_urls: urls.length,
+      user_id: user.id, // ADDED: Pass user ID
       channel,
       subject_template: channel === 'email' && subjectTemplate.trim() ? subjectTemplate.trim() : undefined,
       message_template: messageTemplate.trim(),
@@ -60,6 +70,7 @@ export const CreateBatchPage = () => {
     showToast(`Batch created! Nessie is processing ${urls.length} leads...`);
 
     const makeWebhookUrl = import.meta.env.VITE_MAKE_BATCH_WEBHOOK_URL;
+    const webhookSecret = import.meta.env.VITE_MAKE_WEBHOOK_SECRET; // ADDED: Secret token
 
     if (makeWebhookUrl) {
       try {
@@ -73,10 +84,14 @@ export const CreateBatchPage = () => {
 
         const webhookResponse = await fetch(makeWebhookUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(webhookSecret && { 'X-Webhook-Secret': webhookSecret }), // ADDED: Send secret
+          },
           body: JSON.stringify({
             batch_id: batch.id,
             batch_uuid: batch.id,
+            user_id: user.id, // ADDED: Send user ID to Make
             urls: normalizedUrls,
             label: batchName.trim() || `Batch ${Date.now()}`,
             channel,
@@ -87,12 +102,19 @@ export const CreateBatchPage = () => {
 
         if (webhookResponse.ok) {
           await updateBatch(batch.id, { status: 'processing' });
+          console.log('Webhook sent successfully, batch status updated to processing');
         } else {
-          console.error('Webhook failed:', await webhookResponse.text());
+          const errorText = await webhookResponse.text();
+          console.error('Webhook failed:', errorText);
+          showToast('Batch created but webhook failed. Check console.');
         }
       } catch (error) {
         console.error('Error sending webhook:', error);
+        showToast('Batch created but webhook failed. Check console.');
       }
+    } else {
+      console.warn('VITE_MAKE_BATCH_WEBHOOK_URL not configured');
+      showToast('Batch created but webhook URL not configured');
     }
 
     navigate('/queue');
@@ -159,6 +181,7 @@ export const CreateBatchPage = () => {
         </p>
 
         <form onSubmit={handleSubmit}>
+          {/* FORM CONTENT - keeping your existing form JSX */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: '40% 60%',
