@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { SuccessfulScrape, LeadStatus } from '../../types/nessie';
 import type { Batch } from '../../hooks/useBatches';
 import { LoadingSkeleton } from './LoadingSkeleton';
@@ -135,6 +135,9 @@ export const LeadDetail = ({
   const leadNumber = currentLeadIndex + 1;
   const totalLeads = allLeads.length;
 
+  // Generate greeting once and cache it (won't regenerate on re-renders)
+  const emptyStateGreeting = useMemo(() => getEmptyStateGreeting('Sami'), []);
+
   // Update message when lead changes
   useEffect(() => {
     if (lead) {
@@ -183,9 +186,7 @@ Where Marketing Meets Automation`;
   if (!lead || !batch) {
     console.log('[LeadDetail] No lead or batch selected');
     
-    // Dynamic empty state with personalized greeting
-    const greeting = getEmptyStateGreeting('Sami');
-    
+    // Use the cached greeting (generated once on mount)
     return (
       <div style={{
         display: 'flex',
@@ -209,7 +210,7 @@ Where Marketing Meets Automation`;
           color: '#e2e8f0',
           marginBottom: '12px',
         }}>
-          {greeting}
+          {emptyStateGreeting}
         </div>
         <div style={{
           fontSize: '16px',
