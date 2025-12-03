@@ -1,57 +1,59 @@
-import { useAuth } from '../../hooks/useAuth';
+interface TopBarProps {
+  activeView: string;
+  onViewChange: (view: string) => void;
+  onCreateNewBatch: () => void;
+}
 
-export const TopBar = ({ activeView, onViewChange, onNewBatchClick }: TopBarProps) => {
-  const { profile, signOut, isAdmin } = useAuth();
-
-  const handleSignOut = async () => {
-    await signOut();
-    window.location.href = '/login';
-  };
+export const TopBar = ({ activeView, onViewChange, onCreateNewBatch }: TopBarProps) => {
+  const views = ['Queue', 'Analytics', 'Settings'];
 
   return (
-    <header className="top-bar">
-      {/* Existing header content */}
-      
-      {/* Add user menu to the right */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-        marginLeft: 'auto',
-      }}>
-        <div style={{
-          fontSize: '14px',
-          color: 'var(--text-secondary)',
-        }}>
-          {profile?.first_name} {profile?.last_name}
-          {isAdmin && (
-            <span style={{
-              marginLeft: '8px',
-              fontSize: '11px',
-              color: 'var(--accent)',
-              fontWeight: 600,
-            }}>
-              (admin)
-            </span>
-          )}
-        </div>
-        
-        <button
-          onClick={handleSignOut}
-          style={{
-            padding: '6px 12px',
-            background: 'transparent',
-            border: '1px solid var(--border)',
-            borderRadius: '4px',
-            fontSize: '13px',
-            color: 'var(--text-secondary)',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          Sign Out
-        </button>
+    <div className="topbar">
+      <div className="topbar-left">
+        <div className="brand">Nessie</div>
+        <div className="nessie-pill">Kelpie AI Outreach Console</div>
       </div>
-    </header>
+      <div className="topbar-nav">
+        {views.map((view) => (
+          <span
+            key={view}
+            className={activeView === view ? 'active' : ''}
+            onClick={() => onViewChange(view)}
+          >
+            {view}
+          </span>
+        ))}
+        <button
+          onClick={onCreateNewBatch}
+          style={{
+            background: 'var(--accent)',
+            color: '#021014',
+            border: 'none',
+            borderRadius: '999px',
+            padding: '6px 14px',
+            fontSize: '12px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            transition: 'all 0.2s ease',
+            marginLeft: '8px'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(17, 194, 210, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+          title="Create new batch"
+        >
+          <span style={{ fontSize: '14px' }}>+</span> New Batch
+        </button>
+        <div className="topbar-user">Sami Mustafa (admin) · Kelpie AI</div>
+      </div>
+    </div>
   );
 };
