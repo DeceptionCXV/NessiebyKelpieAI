@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import type { SuccessfulScrape, LeadStatus } from '../../types/nessie';
 import type { Batch } from '../../hooks/useBatches';
 import { LoadingSkeleton } from './LoadingSkeleton';
+import { useAuth } from '../../hooks/useAuth';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -120,6 +121,8 @@ export const LeadDetail = ({
   onLeadDelete,
   onNavigate
 }: LeadDetailProps) => {
+  const { profile } = useAuth();
+  
   const [messageSubject, setMessageSubject] = useState('');
   const [messageBody, setMessageBody] = useState('');
   const [leadStatus, setLeadStatus] = useState<LeadStatus>('new');
@@ -135,8 +138,11 @@ export const LeadDetail = ({
   const leadNumber = currentLeadIndex + 1;
   const totalLeads = allLeads.length;
 
+  // Extract first name from full_name (e.g., "Sami Mustafa" → "Sami")
+  const firstName = profile?.full_name?.split(' ')[0] || 'User';
+  
   // Generate greeting once and cache it (won't regenerate on re-renders)
-  const emptyStateGreeting = useMemo(() => getEmptyStateGreeting('Sami'), []);
+  const emptyStateGreeting = useMemo(() => getEmptyStateGreeting(firstName), [firstName]);
 
   // Update message when lead changes
   useEffect(() => {
