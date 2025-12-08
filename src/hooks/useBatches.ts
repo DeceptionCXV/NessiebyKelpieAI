@@ -90,14 +90,11 @@ export const useBatches = () => {
                   const newSuccessful = (batch.successful_count || 0) + 1;
                   const newProcessed = newSuccessful + (batch.failed_count || 0);
                   
-                  // Auto-complete if all URLs processed
-                  const shouldComplete = newProcessed >= batch.total_urls;
-                  
+                  // DON'T auto-complete client-side - let Make.com handle it
                   return {
                     ...batch,
                     successful_count: newSuccessful,
                     actual_processed: newProcessed,
-                    status: shouldComplete ? 'complete' : batch.status,
                   };
                 }
                 return batch;
@@ -126,14 +123,11 @@ export const useBatches = () => {
                   const newFailed = (batch.failed_count || 0) + 1;
                   const newProcessed = (batch.successful_count || 0) + newFailed;
                   
-                  // Auto-complete if all URLs processed
-                  const shouldComplete = newProcessed >= batch.total_urls;
-                  
+                  // DON'T auto-complete client-side - let Make.com handle it
                   return {
                     ...batch,
                     failed_count: newFailed,
                     actual_processed: newProcessed,
-                    status: shouldComplete ? 'complete' : batch.status,
                   };
                 }
                 return batch;
