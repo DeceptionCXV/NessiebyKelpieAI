@@ -275,22 +275,32 @@ export const useBatches = () => {
   const deleteBatch = async (id: string) => {
     try {
       console.log('Deleting batch:', id);
+    
+      // STEP 1: Delete failed_scrapes first
+      await supabase
+        .from('failed_scrapes')
+        .delete()
+        .eq('batch_uuid', id);
+
+      // STEP 2: Delete successful_scrapes
+      await supabase
+        .from('successful_scrapes')
+        .delete()
+        .eq('batch_uuid', id);
+
+      // STEP 3: Now delete the batch
       const { error } = await supabase
         .from('batches')
         .delete()
         .eq('id', id);
 
-      if (error) {
-        console.error('Error deleting batch:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('Batch deleted successfully');
       setBatches((prev) => prev.filter((b) => b.id !== id));
-      
+    
       return { error: null };
     } catch (error) {
-      console.error('Error deleting batch (caught):', error);
+      console.error('Error deleting batch:', error);
       return { error };
     }
   };
