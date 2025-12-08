@@ -415,11 +415,11 @@ export const Sidebar = ({
 
       {showDeleteDialog && (
         <ConfirmDialog
-          title={selectedBatchIds.size > 0 ? "Delete Multiple Batches" : "Delete Batch"}
+          title={selectedBatchIds.size > 1 ? "Delete Multiple Batches" : "Delete Batch"}
           message={
             selectedBatchIds.size > 0
-              ? `Are you sure you want to delete ${selectedBatchIds.size} batch${selectedBatchIds.size > 1 ? 'es' : ''}? This will also delete all ${totalLeadsToDelete} leads associated with them. This action cannot be undone.`
-              : `Are you sure you want to delete this batch? This will also delete all ${totalLeadsToDelete} leads associated with it. This action cannot be undone.`
+              ? `Are you sure you want to delete ${selectedBatchIds.size} batch${selectedBatchIds.size > 1 ? 'es' : ''}? This will also delete all ${totalLeadsToDelete} lead${totalLeadsToDelete === 1 ? '' : 's'} associated with them. This action cannot be undone.`
+              : `Are you sure you want to delete this batch? This will also delete all ${totalLeadsToDelete} lead${totalLeadsToDelete === 1 ? '' : 's'} associated with it. This action cannot be undone.`
           }
           confirmText="Delete"
           cancelText="Cancel"
