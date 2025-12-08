@@ -137,9 +137,16 @@ export const Sidebar = ({
 
   const activeBatch = batches.find((b) => b.id === activeBatchId);
   const selectedBatches = batches.filter(b => selectedBatchIds.has(b.id));
+  
+  // FIXED: Use batch.successful_count instead of leadsByBatch cache
   const totalLeadsToDelete = selectedBatchIds.size > 0
-    ? selectedBatches.reduce((sum, batch) => sum + (leadsByBatch[batch.id]?.length || 0), 0)
-    : activeBatch ? (leadsByBatch[activeBatch.id] || []).length : 0;
+    ? selectedBatches.reduce((sum, batch) => {
+        // Try cache first, fallback to batch count
+        const cacheCount = leadsByBatch[batch.id]?.length;
+        const batchCount = batch.successful_count || 0;
+        return sum + (cacheCount !== undefined ? cacheCount : batchCount);
+      }, 0)
+    : activeBatch ? (leadsByBatch[activeBatch.id]?.length || activeBatch.successful_count || 0) : 0;
 
   const handleBatchToggle = (batchId: string) => {
     setExpandedBatches((prev) => {
