@@ -80,15 +80,18 @@ export const useBatches = () => {
           table: 'successful_scrapes',
         },
         (payload) => {
-          console.log('Realtime successful scrape:', payload.new);
+          console.log('✅ Realtime successful scrape:', payload.new);
           const batchUuid = (payload.new as any).batch_uuid;
+          console.log('   → Batch UUID:', batchUuid);
           
           if (batchUuid) {
-            setBatches((prev) =>
-              prev.map((batch) => {
+            setBatches((prev) => {
+              console.log('   → Current batches:', prev.length);
+              const updated = prev.map((batch) => {
                 if (batch.id === batchUuid) {
                   const newSuccessful = (batch.successful_count || 0) + 1;
                   const newProcessed = newSuccessful + (batch.failed_count || 0);
+                  console.log(`   → Updating batch ${batch.label}: ${newSuccessful} successful, ${newProcessed} total`);
                   
                   // DON'T auto-complete client-side - let Make.com handle it
                   return {
@@ -98,8 +101,9 @@ export const useBatches = () => {
                   };
                 }
                 return batch;
-              })
-            );
+              });
+              return updated;
+            });
           }
         }
       )
@@ -113,15 +117,18 @@ export const useBatches = () => {
           table: 'failed_scrapes',
         },
         (payload) => {
-          console.log('Realtime failed scrape:', payload.new);
+          console.log('❌ Realtime failed scrape:', payload.new);
           const batchUuid = (payload.new as any).batch_uuid;
+          console.log('   → Batch UUID:', batchUuid);
           
           if (batchUuid) {
-            setBatches((prev) =>
-              prev.map((batch) => {
+            setBatches((prev) => {
+              console.log('   → Current batches:', prev.length);
+              const updated = prev.map((batch) => {
                 if (batch.id === batchUuid) {
                   const newFailed = (batch.failed_count || 0) + 1;
                   const newProcessed = (batch.successful_count || 0) + newFailed;
+                  console.log(`   → Updating batch ${batch.label}: ${newFailed} failed, ${newProcessed} total`);
                   
                   // DON'T auto-complete client-side - let Make.com handle it
                   return {
@@ -131,14 +138,24 @@ export const useBatches = () => {
                   };
                 }
                 return batch;
-              })
-            );
+              });
+              return updated;
+            });
           }
         }
       )
       
-      .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
+      .subscribe((status, err) => {
+        console.log('🔴 Realtime subscription status:', status);
+        if (err) {
+          console.error('🔴 Realtime subscription error:', err);
+        }
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Realtime connected! Listening to batches, successful_scrapes, failed_scrapes');
+        }
+        if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Realtime channel error - check Supabase settings');
+        }
       });
 
     return () => {
