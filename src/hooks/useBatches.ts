@@ -49,14 +49,20 @@ export const useBatches = () => {
             };
             setBatches((prev) => [newBatch, ...prev]);
           } else if (payload.eventType === 'UPDATE') {
-            // Batch updated (status change, etc) - preserve counts
+            // Batch updated (status change from Make.com) - only update status
+            console.log('🔄 Realtime batch UPDATE:', payload.new);
             setBatches((prev) =>
               prev.map((b) => {
                 if (b.id === payload.new.id) {
+                  const updated = payload.new as Batch;
+                  console.log(`   → Updating batch ${b.label} status: ${b.status} → ${updated.status}`);
+                  
                   return {
                     ...b,
-                    ...(payload.new as Batch),
-                    // Keep existing counts - they're updated by scrape listeners
+                    // ONLY update status and processed_urls from DB
+                    status: updated.status,
+                    processed_urls: updated.processed_urls,
+                    // Keep all realtime-calculated counts
                     successful_count: b.successful_count,
                     failed_count: b.failed_count,
                     actual_processed: b.actual_processed,
