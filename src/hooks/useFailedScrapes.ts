@@ -81,47 +81,111 @@ export const useFailedScrapes = (batchId: string) => {
   const retryUrl = async (scrapeId: string) => {
     try {
       const scrape = failedScrapes.find((s) => s.id === scrapeId);
-      if (!scrape) return { error: 'Scrape not found' };
+      if (!scrape) {
+        console.error('Scrape not found:', scrapeId);
+        return { error: 'Scrape not found' };
+      }
+
+      console.log('🔄 Retrying URL:', scrape.website);
 
       // Update status to retrying
-      await supabase
+      const { error: updateError } = await supabase
         .from('failed_scrapes')
-        .update({ status: 'retrying' })
+        .update({ 
+          status: 'retrying',
+          last_updated: new Date().toISOString()
+        })
         .eq('id', scrapeId);
 
-      // Get webhook secret
+      if (updateError) {
+        console.error('Error updating status:', updateError);
+        return { error: updateError };
+      }
+
+      // Get webhook URL and secret
+      const webhookUrl = import.meta.env.VITE_MAKE_BATCH_WEBHOOK_URL; // FIXED: Use correct env var
       const webhookSecret = import.meta.env.VITE_MAKE_WEBHOOK_SECRET || 'h3Q9tZVfA2nL0cW7RmPpB8sKxY4uD1eT';
       
+      if (!webhookUrl) {
+        console.error('❌ VITE_MAKE_BATCH_WEBHOOK_URL not configured');
+        
+        // Reset status
+        await supabase
+          .from('failed_scrapes')
+          .update({ status: 'failed' })
+          .eq('id', scrapeId);
+        
+        return { error: 'Webhook URL not configured' };
+      }
+
       // Get user ID
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return { error: 'Not authenticated' };
+      if (!user) {
+        console.error('❌ Not authenticated');
+        
+        // Reset status
+        await supabase
+          .from('failed_scrapes')
+          .update({ status: 'failed' })
+          .eq('id', scrapeId);
+        
+        return { error: 'Not authenticated' };
+      }
+
+      // Normalize URL (add https:// if missing)
+      let normalizedUrl = scrape.website.trim();
+      if (!normalizedUrl.startsWith('https://') && !normalizedUrl.startsWith('http://')) {
+        normalizedUrl = `https://${normalizedUrl}`;
+      }
+
+      console.log('📤 Sending to webhook:', webhookUrl);
+      console.log('📦 Payload:', {
+        urls: [normalizedUrl],
+        batch_id: scrape.batch_uuid,
+        user_id: user.id,
+        is_retry: true,
+      });
 
       // Send to Make.com for retry (single URL)
-      const webhookUrl = import.meta.env.VITE_MAKE_WEBHOOK_URL;
       const response = await fetch(webhookUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Webhook-Secret': webhookSecret,
+        },
         body: JSON.stringify({
-          urls: [scrape.website],
-          user_id: user.id,
           batch_id: scrape.batch_uuid,
+          batch_uuid: scrape.batch_uuid,
+          user_id: user.id,
           webhook_secret: webhookSecret,
+          urls: [normalizedUrl],
           is_retry: true,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Webhook failed');
+        const errorText = await response.text();
+        console.error('❌ Webhook failed:', response.status, errorText);
+        throw new Error(`Webhook failed: ${response.status}`);
       }
 
+      console.log('✅ Webhook sent successfully');
+      
+      // Note: Status will be updated by Make.com when it completes
+      // Either: success → deleted from failed_scrapes
+      // Or: failed again → status back to 'failed'
+      
       return { error: null };
     } catch (error) {
-      console.error('Error retrying URL:', error);
+      console.error('❌ Error retrying URL:', error);
       
       // Reset status back to failed
       await supabase
         .from('failed_scrapes')
-        .update({ status: 'failed' })
+        .update({ 
+          status: 'failed',
+          last_updated: new Date().toISOString()
+        })
         .eq('id', scrapeId);
       
       return { error };
@@ -160,17 +224,34 @@ export const useFailedScrapes = (batchId: string) => {
       if (batchError) throw batchError;
 
       // Send to Make.com
+      const webhookUrl = import.meta.env.VITE_MAKE_BATCH_WEBHOOK_URL;
       const webhookSecret = import.meta.env.VITE_MAKE_WEBHOOK_SECRET || 'h3Q9tZVfA2nL0cW7RmPpB8sKxY4uD1eT';
-      const webhookUrl = import.meta.env.VITE_MAKE_WEBHOOK_URL;
+      
+      if (!webhookUrl) {
+        return { error: 'Webhook URL not configured' };
+      }
+
+      // Normalize URLs
+      const normalizedUrls = urls.map(url => {
+        const trimmed = url.trim();
+        if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
+          return trimmed;
+        }
+        return `https://${trimmed}`;
+      });
       
       const response = await fetch(webhookUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Webhook-Secret': webhookSecret,
+        },
         body: JSON.stringify({
-          urls,
-          user_id: user.id,
           batch_id: newBatch.id,
+          batch_uuid: newBatch.id,
+          user_id: user.id,
           webhook_secret: webhookSecret,
+          urls: normalizedUrls,
         }),
       });
 
@@ -181,7 +262,10 @@ export const useFailedScrapes = (batchId: string) => {
       // Mark all as retrying
       await supabase
         .from('failed_scrapes')
-        .update({ status: 'retrying' })
+        .update({ 
+          status: 'retrying',
+          last_updated: new Date().toISOString()
+        })
         .eq('batch_uuid', batchId)
         .eq('status', 'failed');
 
@@ -197,7 +281,10 @@ export const useFailedScrapes = (batchId: string) => {
     try {
       const { error } = await supabase
         .from('failed_scrapes')
-        .update({ status: 'wont-fix' })
+        .update({ 
+          status: 'wont-fix',
+          last_updated: new Date().toISOString()
+        })
         .eq('id', scrapeId);
 
       if (error) throw error;
@@ -217,7 +304,10 @@ export const useFailedScrapes = (batchId: string) => {
     try {
       const { error } = await supabase
         .from('failed_scrapes')
-        .update({ status: 'wont-fix' })
+        .update({ 
+          status: 'wont-fix',
+          last_updated: new Date().toISOString()
+        })
         .in('id', selectedIds);
 
       if (error) throw error;
@@ -246,7 +336,10 @@ export const useFailedScrapes = (batchId: string) => {
       // Mark as retrying
       await supabase
         .from('failed_scrapes')
-        .update({ status: 'retrying' })
+        .update({ 
+          status: 'retrying',
+          last_updated: new Date().toISOString()
+        })
         .in('id', selectedIds);
 
       // Get user
@@ -254,17 +347,40 @@ export const useFailedScrapes = (batchId: string) => {
       if (!user) return { error: 'Not authenticated' };
 
       // Send to Make.com (will go back to same batch)
+      const webhookUrl = import.meta.env.VITE_MAKE_BATCH_WEBHOOK_URL;
       const webhookSecret = import.meta.env.VITE_MAKE_WEBHOOK_SECRET || 'h3Q9tZVfA2nL0cW7RmPpB8sKxY4uD1eT';
-      const webhookUrl = import.meta.env.VITE_MAKE_WEBHOOK_URL;
+      
+      if (!webhookUrl) {
+        // Reset status
+        await supabase
+          .from('failed_scrapes')
+          .update({ status: 'failed' })
+          .in('id', selectedIds);
+        
+        return { error: 'Webhook URL not configured' };
+      }
+
+      // Normalize URLs
+      const normalizedUrls = urls.map(url => {
+        const trimmed = url.trim();
+        if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
+          return trimmed;
+        }
+        return `https://${trimmed}`;
+      });
       
       const response = await fetch(webhookUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Webhook-Secret': webhookSecret,
+        },
         body: JSON.stringify({
-          urls,
-          user_id: user.id,
           batch_id: batchId,
+          batch_uuid: batchId,
+          user_id: user.id,
           webhook_secret: webhookSecret,
+          urls: normalizedUrls,
           is_retry: true,
         }),
       });
