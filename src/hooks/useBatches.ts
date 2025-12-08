@@ -12,6 +12,10 @@ export interface Batch {
   channel?: string;
   subject_template?: string;
   message_template?: string;
+  // ADDED: Real-time calculated fields
+  successful_count?: number;
+  failed_count?: number;
+  actual_processed?: number; // successful + failed (more accurate than processed_urls)
 }
 
 export const useBatches = () => {
@@ -19,10 +23,13 @@ export const useBatches = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchBatches();
+    fetchBatchesWithCounts();
 
+    // Create a single channel for all realtime subscriptions
     const channel = supabase
-      .channel('batches-changes')
+      .channel('nessie-realtime')
+      
+      // Listen to batches table changes
       .on(
         'postgres_changes',
         {
@@ -33,16 +40,109 @@ export const useBatches = () => {
         (payload) => {
           console.log('Realtime batch event:', payload.eventType, payload);
           if (payload.eventType === 'INSERT') {
-            setBatches((prev) => [payload.new as Batch, ...prev]);
+            // New batch created - add with zero counts
+            const newBatch = {
+              ...(payload.new as Batch),
+              successful_count: 0,
+              failed_count: 0,
+              actual_processed: 0,
+            };
+            setBatches((prev) => [newBatch, ...prev]);
           } else if (payload.eventType === 'UPDATE') {
+            // Batch updated (status change, etc) - preserve counts
             setBatches((prev) =>
-              prev.map((b) => (b.id === payload.new.id ? (payload.new as Batch) : b))
+              prev.map((b) => {
+                if (b.id === payload.new.id) {
+                  return {
+                    ...b,
+                    ...(payload.new as Batch),
+                    // Keep existing counts - they're updated by scrape listeners
+                    successful_count: b.successful_count,
+                    failed_count: b.failed_count,
+                    actual_processed: b.actual_processed,
+                  };
+                }
+                return b;
+              })
             );
           } else if (payload.eventType === 'DELETE') {
             setBatches((prev) => prev.filter((b) => b.id !== payload.old.id));
           }
         }
       )
+      
+      // Listen to successful_scrapes inserts
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'successful_scrapes',
+        },
+        (payload) => {
+          console.log('Realtime successful scrape:', payload.new);
+          const batchUuid = (payload.new as any).batch_uuid;
+          
+          if (batchUuid) {
+            setBatches((prev) =>
+              prev.map((batch) => {
+                if (batch.id === batchUuid) {
+                  const newSuccessful = (batch.successful_count || 0) + 1;
+                  const newProcessed = newSuccessful + (batch.failed_count || 0);
+                  
+                  // Auto-complete if all URLs processed
+                  const shouldComplete = newProcessed >= batch.total_urls;
+                  
+                  return {
+                    ...batch,
+                    successful_count: newSuccessful,
+                    actual_processed: newProcessed,
+                    status: shouldComplete ? 'complete' : batch.status,
+                  };
+                }
+                return batch;
+              })
+            );
+          }
+        }
+      )
+      
+      // Listen to failed_scrapes inserts
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'failed_scrapes',
+        },
+        (payload) => {
+          console.log('Realtime failed scrape:', payload.new);
+          const batchUuid = (payload.new as any).batch_uuid;
+          
+          if (batchUuid) {
+            setBatches((prev) =>
+              prev.map((batch) => {
+                if (batch.id === batchUuid) {
+                  const newFailed = (batch.failed_count || 0) + 1;
+                  const newProcessed = (batch.successful_count || 0) + newFailed;
+                  
+                  // Auto-complete if all URLs processed
+                  const shouldComplete = newProcessed >= batch.total_urls;
+                  
+                  return {
+                    ...batch,
+                    failed_count: newFailed,
+                    actual_processed: newProcessed,
+                    status: shouldComplete ? 'complete' : batch.status,
+                  };
+                }
+                return batch;
+              })
+            );
+          }
+        }
+      )
+      
       .subscribe((status) => {
         console.log('Realtime subscription status:', status);
       });
@@ -52,23 +152,50 @@ export const useBatches = () => {
     };
   }, []);
 
-  const fetchBatches = async () => {
+  const fetchBatchesWithCounts = async () => {
     try {
-      console.log('Fetching batches...');
-      const { data, error } = await supabase
+      console.log('Fetching batches with counts...');
+      
+      // Fetch batches
+      const { data: batchesData, error: batchesError } = await supabase
         .from('batches')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching batches:', error);
-        throw error;
-      }
+      if (batchesError) throw batchesError;
 
-      console.log('Batches fetched:', data);
-      setBatches(data || []);
+      // For each batch, fetch successful and failed counts
+      const batchesWithCounts = await Promise.all(
+        (batchesData || []).map(async (batch) => {
+          // Count successful scrapes
+          const { count: successCount } = await supabase
+            .from('successful_scrapes')
+            .select('*', { count: 'exact', head: true })
+            .eq('batch_uuid', batch.id);
+
+          // Count failed scrapes
+          const { count: failCount } = await supabase
+            .from('failed_scrapes')
+            .select('*', { count: 'exact', head: true })
+            .eq('batch_uuid', batch.id);
+
+          const successful = successCount || 0;
+          const failed = failCount || 0;
+          const actualProcessed = successful + failed;
+
+          return {
+            ...batch,
+            successful_count: successful,
+            failed_count: failed,
+            actual_processed: actualProcessed,
+          };
+        })
+      );
+
+      console.log('Batches with counts fetched:', batchesWithCounts);
+      setBatches(batchesWithCounts);
     } catch (error) {
-      console.error('Error fetching batches (caught):', error);
+      console.error('Error fetching batches with counts:', error);
     } finally {
       setLoading(false);
     }
@@ -77,7 +204,7 @@ export const useBatches = () => {
   const createBatch = async (batchData: {
     label: string;
     total_urls: number;
-    user_id: string; // ADDED: Required user ID
+    user_id: string;
     channel?: string;
     subject_template?: string;
     message_template?: string;
@@ -92,7 +219,7 @@ export const useBatches = () => {
           status: 'pending' as const,
           total_urls: batchData.total_urls,
           processed_urls: 0,
-          owner_user_id: batchData.user_id, // ADDED: Store user ID
+          owner_user_id: batchData.user_id,
           channel: batchData.channel || 'dm',
           subject_template: batchData.subject_template,
           message_template: batchData.message_template,
@@ -102,7 +229,6 @@ export const useBatches = () => {
 
       if (error) {
         console.error('Supabase insert error:', error);
-        console.error('Error details:', JSON.stringify(error, null, 2));
         throw error;
       }
 
@@ -110,9 +236,6 @@ export const useBatches = () => {
       return { data, error: null };
     } catch (error) {
       console.error('Error creating batch (caught):', error);
-      if (error && typeof error === 'object') {
-        console.error('Error object:', JSON.stringify(error, null, 2));
-      }
       return { data: null, error };
     }
   };
@@ -146,8 +269,6 @@ export const useBatches = () => {
       }
 
       console.log('Batch deleted successfully');
-      
-      // Manually remove from state (don't wait for realtime)
       setBatches((prev) => prev.filter((b) => b.id !== id));
       
       return { error: null };
@@ -163,6 +284,6 @@ export const useBatches = () => {
     createBatch,
     updateBatch,
     deleteBatch,
-    refreshBatches: fetchBatches,
+    refreshBatches: fetchBatchesWithCounts,
   };
 };
