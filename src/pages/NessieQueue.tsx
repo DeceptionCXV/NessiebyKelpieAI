@@ -99,6 +99,11 @@ export const NessieQueue = () => {
           ? { ...tab, lead: { ...tab.lead, ...updates } }
           : tab
       )
+    const handleOpenFailedTab = (batchId: string) => {
+      console.log('Opening failed tab for batch:', batchId);
+        setActiveBatchId(batchId);
+          setActiveTab('failed');
+    };
     );
 
     // Update leadsByBatch cache
