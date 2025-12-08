@@ -418,8 +418,8 @@ export const Sidebar = ({
           title={selectedBatchIds.size > 1 ? "Delete Multiple Batches" : "Delete Batch"}
           message={
             selectedBatchIds.size > 0
-              ? `Are you sure you want to delete ${selectedBatchIds.size} batch${selectedBatchIds.size > 1 ? 'es' : ''}? This will also delete all ${totalLeadsToDelete} lead${totalLeadsToDelete === 1 ? '' : 's'} associated with them. This action cannot be undone.`
-              : `Are you sure you want to delete this batch? This will also delete all ${totalLeadsToDelete} lead${totalLeadsToDelete === 1 ? '' : 's'} associated with it. This action cannot be undone.`
+              ? `Are you sure you want to delete ${selectedBatchIds.size} batch${selectedBatchIds.size > 1 ? 'es' : ''}? This will also delete all ${totalLeadsToDelete} lead${totalLeadsToDelete === 1 ? '' : 's'} associated with them. This action cannot be undone.\n\n${selectedBatches.map(b => `• ${b.label}`).join('\n')}`
+              : `Are you sure you want to delete this batch? This will also delete all ${totalLeadsToDelete} lead${totalLeadsToDelete === 1 ? '' : 's'} associated with it. This action cannot be undone.${activeBatch ? `\n\n• ${activeBatch.label}` : ''}`
           }
           confirmText="Delete"
           cancelText="Cancel"
