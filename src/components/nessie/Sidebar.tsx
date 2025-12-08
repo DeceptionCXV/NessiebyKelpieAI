@@ -16,6 +16,7 @@ interface SidebarProps {
   onCreateNewBatch: () => void;
   onRefreshBatches: () => Promise<void>;
   onDeleteBatch: (batchId: string) => Promise<void>;
+  onOpenFailedTab?: (batchId: string) => void; // NEW: Handler to open failed tab
 }
 
 export const Sidebar = ({
@@ -29,6 +30,7 @@ export const Sidebar = ({
   onCreateNewBatch,
   onRefreshBatches,
   onDeleteBatch,
+  onOpenFailedTab, // NEW: Destructure the new prop
 }: SidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedBatches, setExpandedBatches] = useState<Set<string>>(new Set());
@@ -375,6 +377,7 @@ export const Sidebar = ({
                   onToggleExpand={() => handleBatchToggle(batch.id)}
                   onLeadClick={(leadId) => handleLeadClickWithExpand(leadId)}
                   onSelect={(e) => handleBatchSelect(batch.id, e)}
+                  onOpenFailedTab={onOpenFailedTab ? () => onOpenFailedTab(batch.id) : undefined} // NEW: Pass handler
                 />
               ))
             )}
