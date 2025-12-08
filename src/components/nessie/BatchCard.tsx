@@ -1,6 +1,6 @@
 import type { Batch } from '../../hooks/useBatches';
 import type { SuccessfulScrape } from '../../types/nessie';
-import { ChevronRight, ChevronDown } from 'lucide-react';
+import { ChevronRight, ChevronDown, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 
 interface BatchCardProps {
@@ -8,12 +8,12 @@ interface BatchCardProps {
   leads: SuccessfulScrape[];
   isActive: boolean;
   isExpanded: boolean;
-  isSelected: boolean;  // NEW
+  isSelected: boolean;
   activeLeadId: string | null;
   onClick: () => void;
   onToggleExpand: () => void;
   onLeadClick: (leadId: string) => void;
-  onSelect: (e: React.MouseEvent) => void;  // NEW
+  onSelect: (e: React.MouseEvent) => void;
 }
 
 export const BatchCard = ({
@@ -21,23 +21,42 @@ export const BatchCard = ({
   leads,
   isActive,
   isExpanded,
-  isSelected,  // NEW
+  isSelected,
   activeLeadId,
   onClick,
   onToggleExpand,
   onLeadClick,
-  onSelect,  // NEW
+  onSelect,
 }: BatchCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
-  const leadsCount = leads.length;
   
-  // Calculate status based on processed count
-  const isComplete = batch.processed_urls >= batch.total_urls;
-  const isProcessing = batch.processed_urls > 0 && !isComplete;
+  // Use actual_processed if available, fallback to successful leads count
+  const successfulCount = batch.successful_count || leads.length;
+  const failedCount = batch.failed_count || 0;
+  const actualProcessed = batch.actual_processed || successfulCount;
+  
+  // Calculate status based on actual processed count
+  const isComplete = actualProcessed >= batch.total_urls || batch.status === 'complete';
+  const isProcessing = actualProcessed > 0 && !isComplete;
   const status = isComplete ? 'complete' : isProcessing ? 'processing' : 'pending';
 
+  // Format date with time
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const dateStr = date.toLocaleDateString('en-GB', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric' 
+    });
+    const timeStr = date.toLocaleTimeString('en-GB', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false
+    });
+    return `${dateStr} ${timeStr}`;
+  };
+
   const handleBatchClick = (e: React.MouseEvent) => {
-    // Don't trigger on chevron click or checkbox click
     if ((e.target as HTMLElement).closest('.batch-toggle') || 
         (e.target as HTMLElement).closest('.batch-checkbox')) {
       return;
@@ -46,7 +65,6 @@ export const BatchCard = ({
   };
 
   const handleBatchDoubleClick = (e: React.MouseEvent) => {
-    // Don't trigger on chevron double-click or checkbox
     if ((e.target as HTMLElement).closest('.batch-toggle') || 
         (e.target as HTMLElement).closest('.batch-checkbox')) {
       return;
@@ -95,8 +113,8 @@ export const BatchCard = ({
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
-          {/* NEW: Checkbox (visible on hover or when selected) */}
           <div style={{ display: 'flex', alignItems: 'start', gap: '10px', flex: 1, minWidth: 0 }}>
+            {/* Checkbox */}
             <div
               className="batch-checkbox"
               onClick={handleCheckboxClick}
@@ -151,9 +169,9 @@ export const BatchCard = ({
                 alignItems: 'center',
                 gap: '8px',
               }}>
-                <span>{leadsCount} leads</span>
+                <span>{successfulCount} leads</span>
                 <span>•</span>
-                <span>{new Date(batch.created_at).toLocaleDateString()}</span>
+                <span>{formatDateTime(batch.created_at)}</span>
               </div>
             </div>
           </div>
@@ -184,7 +202,7 @@ export const BatchCard = ({
               {status.toUpperCase()}
             </div>
 
-            {leadsCount > 0 && (
+            {successfulCount > 0 && (
               <button
                 className="batch-toggle"
                 onClick={handleToggleClick}
@@ -231,21 +249,19 @@ export const BatchCard = ({
                 fontWeight: 500,
                 marginBottom: '2px',
               }}>
-                {batch.processed_urls || 0}/{batch.total_urls} processed
+                {actualProcessed}/{batch.total_urls} processed
               </div>
-              {(batch.successful_count > 0 || batch.failed_count > 0) && (
-                <div style={{
-                  fontSize: '11px',
-                  color: 'var(--text-secondary)',
-                }}>
-                  {batch.successful_count || 0} success • {batch.failed_count || 0} failed
-                </div>
-              )}
+              <div style={{
+                fontSize: '11px',
+                color: 'var(--text-secondary)',
+              }}>
+                {successfulCount} success • {failedCount} failed
+              </div>
             </div>
           </div>
         )}
 
-        {/* Complete indicator */}
+        {/* Complete indicator with failed scrapes warning */}
         {status === 'complete' && (
           <div style={{
             marginTop: '8px',
@@ -263,15 +279,41 @@ export const BatchCard = ({
             <div style={{
               fontSize: '11px',
               color: 'var(--text-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
             }}>
-              {batch.successful_count || 0} success • {batch.failed_count || 0} failed
+              <span>{successfulCount} success • {failedCount} failed</span>
             </div>
+            
+            {/* Failed scrapes warning */}
+            {failedCount > 0 && (
+              <div style={{
+                marginTop: '6px',
+                padding: '6px 8px',
+                borderRadius: '4px',
+                background: 'rgba(251, 191, 36, 0.1)',
+                border: '1px solid rgba(251, 191, 36, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}>
+                <AlertTriangle size={12} color="rgb(251, 191, 36)" />
+                <span style={{
+                  fontSize: '11px',
+                  color: 'rgb(251, 191, 36)',
+                  fontWeight: 500,
+                }}>
+                  {failedCount} {failedCount === 1 ? 'scrape' : 'scrapes'} need attention
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>
 
       {/* Lead list */}
-      {isExpanded && leadsCount > 0 && (
+      {isExpanded && successfulCount > 0 && (
         <div style={{ marginLeft: '16px', marginBottom: '8px' }}>
           {leads.map((lead) => (
             <div
