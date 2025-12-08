@@ -25,7 +25,8 @@ export const ConfirmDialog = ({
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(0, 0, 0, 0.7)',
+        background: 'rgba(0, 0, 0, 0.85)', // FIXED: Darker from 0.7 to 0.85
+        backdropFilter: 'blur(4px)', // ADDED: Blur for better readability
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -41,7 +42,7 @@ export const ConfirmDialog = ({
           padding: '24px',
           maxWidth: '480px',
           width: '90%',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)', // FIXED: Stronger shadow from 0.4 to 0.6
         }}
         onClick={(e) => e.stopPropagation()}
       >
