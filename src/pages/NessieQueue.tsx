@@ -23,6 +23,7 @@ export const NessieQueue = () => {
   const [activeView, setActiveView] = useState('Queue');
   const [activeBatchId, setActiveBatchId] = useState<string | null>(null);
   const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'all' | 'failed'>('all');
   const [openTabs, setOpenTabs] = useState<LeadTab[]>([]);
   const [leadsByBatch, setLeadsByBatch] = useState<Record<string, SuccessfulScrape[]>>({});
   const [loadingLead, setLoadingLead] = useState(false);
