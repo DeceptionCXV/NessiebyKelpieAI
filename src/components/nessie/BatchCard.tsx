@@ -183,13 +183,8 @@ export const BatchCard = ({
               <div style={{
                 fontSize: '12px',
                 color: 'var(--text-secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
               }}>
-                <span>{successfulCount} leads</span>
-                <span>•</span>
-                <span>{formatDateTime(batch.created_at)}</span>
+                {successfulCount} leads • {formatDateTime(batch.created_at)}
               </div>
             </div>
           </div>
@@ -321,13 +316,13 @@ export const BatchCard = ({
                 }}
                 style={{
                   marginTop: '6px',
-                  padding: '6px 8px',
+                  padding: '6px 10px',
                   borderRadius: '4px',
                   background: 'rgba(251, 191, 36, 0.1)',
                   border: '1px solid rgba(251, 191, 36, 0.2)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
+                  justifyContent: 'space-between', // CHANGED: space-between for chevron on right
                   cursor: onOpenFailedTab ? 'pointer' : 'default',
                   transition: 'all 0.2s',
                 }}
@@ -340,14 +335,20 @@ export const BatchCard = ({
                   e.currentTarget.style.background = 'rgba(251, 191, 36, 0.1)';
                 }}
               >
-                <AlertTriangle size={12} color="rgb(251, 191, 36)" />
-                <span style={{
-                  fontSize: '11px',
-                  color: 'rgb(251, 191, 36)',
-                  fontWeight: 500,
-                }}>
-                  {failedCount} {failedCount === 1 ? 'scrape' : 'scrapes'} need attention
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <AlertTriangle size={12} color="rgb(251, 191, 36)" />
+                  <span style={{
+                    fontSize: '11px',
+                    color: 'rgb(251, 191, 36)',
+                    fontWeight: 500,
+                  }}>
+                    {failedCount} {failedCount === 1 ? 'scrape' : 'scrapes'} need attention
+                  </span>
+                </div>
+                {/* NEW: Add chevron on the right */}
+                {onOpenFailedTab && (
+                  <ChevronRight size={12} color="rgb(251, 191, 36)" />
+                )}
               </div>
             )}
           </div>
