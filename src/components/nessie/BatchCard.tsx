@@ -14,6 +14,7 @@ interface BatchCardProps {
   onToggleExpand: () => void;
   onLeadClick: (leadId: string) => void;
   onSelect: (e: React.MouseEvent) => void;
+  onOpenFailedTab?: () => void; // NEW: Callback to open failed tab
 }
 
 export const BatchCard = ({
@@ -27,14 +28,17 @@ export const BatchCard = ({
   onToggleExpand,
   onLeadClick,
   onSelect,
+  onOpenFailedTab, // NEW
 }: BatchCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showCompletionMessage, setShowCompletionMessage] = useState(false);
   
-  // Use actual_processed if available, fallback to successful leads count
+  // Use counts for display only - progress comes from DB
   const successfulCount = batch.successful_count || leads.length;
   const failedCount = batch.failed_count || 0;
-  const actualProcessed = batch.actual_processed || successfulCount;
+  
+  // TRUST the database for progress tracking
+  const actualProcessed = batch.processed_urls || 0;
   
   // TRUST the status from the database - don't calculate it client-side
   const status = batch.status;
@@ -308,16 +312,34 @@ export const BatchCard = ({
             
             {/* Failed scrapes warning */}
             {failedCount > 0 && (
-              <div style={{
-                marginTop: '6px',
-                padding: '6px 8px',
-                borderRadius: '4px',
-                background: 'rgba(251, 191, 36, 0.1)',
-                border: '1px solid rgba(251, 191, 36, 0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}>
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onOpenFailedTab) {
+                    onOpenFailedTab();
+                  }
+                }}
+                style={{
+                  marginTop: '6px',
+                  padding: '6px 8px',
+                  borderRadius: '4px',
+                  background: 'rgba(251, 191, 36, 0.1)',
+                  border: '1px solid rgba(251, 191, 36, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: onOpenFailedTab ? 'pointer' : 'default',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  if (onOpenFailedTab) {
+                    e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(251, 191, 36, 0.1)';
+                }}
+              >
                 <AlertTriangle size={12} color="rgb(251, 191, 36)" />
                 <span style={{
                   fontSize: '11px',
