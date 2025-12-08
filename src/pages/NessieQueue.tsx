@@ -8,9 +8,11 @@ import { NotesPanel } from '../components/nessie/NotesPanel';
 import { Toast } from '../components/nessie/Toast';
 import { AnalyticsPage } from './AnalyticsPage';
 import LeadsTable from '../components/nessie/LeadsTable';
+import { StaleBatchBanner } from '../components/nessie/StaleBatchBanner';
 import { useBatches } from '../hooks/useBatches';
 import { useLeads } from '../hooks/useLeads';
 import { useToast } from '../hooks/useToast';
+import { useBatchTimeout } from '../hooks/useBatchTimeout';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import type { SuccessfulScrape } from '../hooks/useLeads';
 import '../styles/nessie.css';
@@ -35,6 +37,7 @@ export const NessieQueue = () => {
   const { batches, deleteBatch, refreshBatches } = useBatches();
   const { leads, updateLead, deleteLead } = useLeads(activeBatchId);
   const { toasts, showToast, removeToast } = useToast();
+  const { staleBatches, hasStaleBatches, markBatchComplete, autoCompleteStale } = useBatchTimeout(batches);
 
   useEffect(() => {
     if (activeBatchId && leads) {
@@ -172,13 +175,34 @@ export const NessieQueue = () => {
     }
   };
 
-  // NEW: Handle opening failed tab from batch card warning
+  // Handle opening failed tab from batch card warning
   const handleOpenFailedTab = (batchId: string) => {
     console.log('🚨 Opening failed tab for batch:', batchId);
     setActiveBatchId(batchId);
     setActiveTab('failed'); // Switch to failed tab
     setShowLeadsTable(true); // Show LeadsTable view
     console.log('✅ Set showLeadsTable to true');
+  };
+
+  // Handle stale batch completion
+  const handleMarkBatchComplete = async (batchId: string) => {
+    const { error } = await markBatchComplete(batchId);
+    if (error) {
+      showToast('Failed to mark batch complete');
+    } else {
+      showToast('Batch marked as complete');
+      await refreshBatches();
+    }
+  };
+
+  const handleAutoCompleteAll = async () => {
+    const { count, error } = await autoCompleteStale();
+    if (error) {
+      showToast('Failed to complete stale batches');
+    } else {
+      showToast(`${count} stale batches marked as complete`);
+      await refreshBatches();
+    }
   };
 
   useKeyboardShortcuts({
@@ -363,6 +387,16 @@ export const NessieQueue = () => {
           onClose={() => removeToast(toast.id)}
         />
       ))}
+
+      {/* Stale Batch Warning Banner */}
+      {hasStaleBatches && activeView === 'Queue' && (
+        <StaleBatchBanner
+          staleBatches={staleBatches}
+          onMarkComplete={handleMarkBatchComplete}
+          onAutoCompleteAll={handleAutoCompleteAll}
+          onDismiss={() => {}}
+        />
+      )}
     </div>
   );
 };
