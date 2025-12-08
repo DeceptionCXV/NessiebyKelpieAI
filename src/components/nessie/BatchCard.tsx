@@ -1,7 +1,7 @@
 import type { Batch } from '../../hooks/useBatches';
 import type { SuccessfulScrape } from '../../types/nessie';
 import { ChevronRight, ChevronDown, AlertTriangle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface BatchCardProps {
   batch: Batch;
@@ -29,6 +29,7 @@ export const BatchCard = ({
   onSelect,
 }: BatchCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [showCompletionMessage, setShowCompletionMessage] = useState(false);
   
   // Use actual_processed if available, fallback to successful leads count
   const successfulCount = batch.successful_count || leads.length;
@@ -39,6 +40,19 @@ export const BatchCard = ({
   const status = batch.status;
   const isComplete = status === 'complete';
   const isProcessing = status === 'processing';
+  const isFullyProcessed = actualProcessed >= batch.total_urls;
+
+  // Show completion message when batch completes, auto-hide after 10 seconds
+  useEffect(() => {
+    if (isComplete && isFullyProcessed) {
+      setShowCompletionMessage(true);
+      const timer = setTimeout(() => {
+        setShowCompletionMessage(false);
+      }, 10000); // 10 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete, isFullyProcessed]);
 
   // Format date with time
   const formatDateTime = (dateString: string) => {
@@ -261,21 +275,27 @@ export const BatchCard = ({
           </div>
         )}
 
-        {/* Complete indicator with failed scrapes warning */}
+        {/* Complete indicator with optional completion message */}
         {status === 'complete' && (
           <div style={{
             marginTop: '8px',
             paddingTop: '8px',
             borderTop: '1px solid rgba(148, 163, 184, 0.1)',
           }}>
-            <div style={{
-              fontSize: '12px',
-              color: 'rgb(34, 197, 94)',
-              fontWeight: 500,
-              marginBottom: '2px',
-            }}>
-              ✓ All {actualProcessed} URLs processed
-            </div>
+            {/* Temporary completion message - shows for 10 seconds */}
+            {showCompletionMessage && isFullyProcessed && (
+              <div style={{
+                fontSize: '12px',
+                color: 'rgb(34, 197, 94)',
+                fontWeight: 500,
+                marginBottom: '6px',
+                animation: 'fadeIn 0.3s ease-in',
+              }}>
+                ✓ All {batch.total_urls} URLs processed
+              </div>
+            )}
+            
+            {/* Permanent counts display */}
             <div style={{
               fontSize: '11px',
               color: 'var(--text-secondary)',
@@ -371,6 +391,11 @@ export const BatchCard = ({
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-4px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
         .batch-spinner {
