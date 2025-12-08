@@ -7,6 +7,7 @@ import { LeadDetail } from '../components/nessie/LeadDetail';
 import { NotesPanel } from '../components/nessie/NotesPanel';
 import { Toast } from '../components/nessie/Toast';
 import { AnalyticsPage } from './AnalyticsPage';
+import LeadsTable from '../components/nessie/LeadsTable';
 import { useBatches } from '../hooks/useBatches';
 import { useLeads } from '../hooks/useLeads';
 import { useToast } from '../hooks/useToast';
@@ -23,7 +24,7 @@ export const NessieQueue = () => {
   const [activeView, setActiveView] = useState('Queue');
   const [activeBatchId, setActiveBatchId] = useState<string | null>(null);
   const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'failed'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'failed'>('all'); // NEW: Track which tab in LeadsTable
   const [openTabs, setOpenTabs] = useState<LeadTab[]>([]);
   const [leadsByBatch, setLeadsByBatch] = useState<Record<string, SuccessfulScrape[]>>({});
   const [loadingLead, setLoadingLead] = useState(false);
@@ -99,11 +100,6 @@ export const NessieQueue = () => {
           ? { ...tab, lead: { ...tab.lead, ...updates } }
           : tab
       )
-    const handleOpenFailedTab = (batchId: string) => {
-      console.log('Opening failed tab for batch:', batchId);
-        setActiveBatchId(batchId);
-          setActiveTab('failed');
-    };
     );
 
     // Update leadsByBatch cache
@@ -174,6 +170,13 @@ export const NessieQueue = () => {
     }
   };
 
+  // NEW: Handle opening failed tab from batch card warning
+  const handleOpenFailedTab = (batchId: string) => {
+    console.log('Opening failed tab for batch:', batchId);
+    setActiveBatchId(batchId);
+    setActiveTab('failed'); // Switch to failed tab
+  };
+
   useKeyboardShortcuts({
     onCreateBatch: () => {
       handleCreateNewBatch();
@@ -193,6 +196,7 @@ export const NessieQueue = () => {
   const handleBatchClick = (batchId: string) => {
     console.log('[NessieQueue] Batch clicked:', batchId);
     setActiveBatchId(batchId);
+    setActiveTab('all'); // NEW: Reset to "all" tab when clicking batch normally
 
     const batchLeads = leadsByBatch[batchId] || [];
     console.log('[NessieQueue] Leads in cache for batch:', batchLeads.length);
@@ -282,6 +286,12 @@ export const NessieQueue = () => {
           </div>
           <div style={{ color: 'var(--text-secondary)' }}>Settings page coming soon...</div>
         </div>
+      ) : activeView === 'Leads' ? (
+        /* NEW: Show LeadsTable when Leads view is active */
+        <LeadsTable 
+          activeBatchId={activeBatchId}
+          initialTab={activeTab}
+        />
       ) : (
         <div className="layout">
           <Sidebar
@@ -295,6 +305,7 @@ export const NessieQueue = () => {
             onCreateNewBatch={handleCreateNewBatch}
             onRefreshBatches={refreshBatches}
             onDeleteBatch={handleDeleteBatch}
+            onOpenFailedTab={handleOpenFailedTab} // NEW: Pass handler
           />
 
           <main className="main">
