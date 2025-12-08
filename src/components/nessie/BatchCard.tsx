@@ -35,10 +35,10 @@ export const BatchCard = ({
   const failedCount = batch.failed_count || 0;
   const actualProcessed = batch.actual_processed || successfulCount;
   
-  // Calculate status based on actual processed count
-  const isComplete = actualProcessed >= batch.total_urls || batch.status === 'complete';
-  const isProcessing = actualProcessed > 0 && !isComplete;
-  const status = isComplete ? 'complete' : isProcessing ? 'processing' : 'pending';
+  // TRUST the status from the database - don't calculate it client-side
+  const status = batch.status;
+  const isComplete = status === 'complete';
+  const isProcessing = status === 'processing';
 
   // Format date with time
   const formatDateTime = (dateString: string) => {
@@ -274,7 +274,7 @@ export const BatchCard = ({
               fontWeight: 500,
               marginBottom: '2px',
             }}>
-              ✓ All {batch.total_urls} URLs processed
+              ✓ All {actualProcessed} URLs processed
             </div>
             <div style={{
               fontSize: '11px',
