@@ -24,7 +24,8 @@ export const NessieQueue = () => {
   const [activeView, setActiveView] = useState('Queue');
   const [activeBatchId, setActiveBatchId] = useState<string | null>(null);
   const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'failed'>('all'); // NEW: Track which tab in LeadsTable
+  const [activeTab, setActiveTab] = useState<'all' | 'failed'>('all'); // Track LeadsTable tab
+  const [showLeadsTable, setShowLeadsTable] = useState(false); // NEW: Track if showing LeadsTable
   const [openTabs, setOpenTabs] = useState<LeadTab[]>([]);
   const [leadsByBatch, setLeadsByBatch] = useState<Record<string, SuccessfulScrape[]>>({});
   const [loadingLead, setLoadingLead] = useState(false);
@@ -75,13 +76,14 @@ export const NessieQueue = () => {
     if (idToDelete === activeBatchId) {
       setActiveBatchId(null);
       setActiveLeadId(null);
+      setShowLeadsTable(false);
     }
 
     await refreshBatches();
     showToast('Batch deleted');
   };
 
-  // NEW: Handle lead updates (status, tags, etc.)
+  // Handle lead updates (status, tags, etc.)
   const handleLeadUpdate = async (leadId: string, updates: Partial<SuccessfulScrape>) => {
     console.log('[NessieQueue] Updating lead:', leadId, updates);
     
@@ -113,7 +115,7 @@ export const NessieQueue = () => {
     }
   };
 
-  // NEW: Handle lead deletion
+  // Handle lead deletion
   const handleLeadDelete = async (leadId: string) => {
     console.log('[NessieQueue] Deleting lead:', leadId);
     
@@ -149,7 +151,7 @@ export const NessieQueue = () => {
     showToast('Lead deleted');
   };
 
-  // NEW: Handle lead navigation (prev/next)
+  // Handle lead navigation (prev/next)
   const handleLeadNavigate = (direction: 'prev' | 'next') => {
     if (!activeBatchId) return;
 
@@ -172,9 +174,11 @@ export const NessieQueue = () => {
 
   // NEW: Handle opening failed tab from batch card warning
   const handleOpenFailedTab = (batchId: string) => {
-    console.log('Opening failed tab for batch:', batchId);
+    console.log('🚨 Opening failed tab for batch:', batchId);
     setActiveBatchId(batchId);
     setActiveTab('failed'); // Switch to failed tab
+    setShowLeadsTable(true); // Show LeadsTable view
+    console.log('✅ Set showLeadsTable to true');
   };
 
   useKeyboardShortcuts({
@@ -196,7 +200,8 @@ export const NessieQueue = () => {
   const handleBatchClick = (batchId: string) => {
     console.log('[NessieQueue] Batch clicked:', batchId);
     setActiveBatchId(batchId);
-    setActiveTab('all'); // NEW: Reset to "all" tab when clicking batch normally
+    setActiveTab('all'); // Reset to "all" tab when clicking batch normally
+    setShowLeadsTable(false); // Hide LeadsTable, show normal view
 
     const batchLeads = leadsByBatch[batchId] || [];
     console.log('[NessieQueue] Leads in cache for batch:', batchLeads.length);
@@ -213,6 +218,7 @@ export const NessieQueue = () => {
   };
 
   const handleLeadClick = (leadId: string, batchId: string) => {
+    setShowLeadsTable(false); // Hide LeadsTable when clicking a lead
     const lead = leadsByBatch[batchId]?.find((l) => l.id === leadId);
     if (lead) {
       openLead(lead, batchId);
@@ -286,12 +292,6 @@ export const NessieQueue = () => {
           </div>
           <div style={{ color: 'var(--text-secondary)' }}>Settings page coming soon...</div>
         </div>
-      ) : activeView === 'Leads' ? (
-        /* NEW: Show LeadsTable when Leads view is active */
-        <LeadsTable 
-          activeBatchId={activeBatchId}
-          initialTab={activeTab}
-        />
       ) : (
         <div className="layout">
           <Sidebar
@@ -305,43 +305,53 @@ export const NessieQueue = () => {
             onCreateNewBatch={handleCreateNewBatch}
             onRefreshBatches={refreshBatches}
             onDeleteBatch={handleDeleteBatch}
-            onOpenFailedTab={handleOpenFailedTab} // NEW: Pass handler
+            onOpenFailedTab={handleOpenFailedTab} // Pass handler
           />
 
           <main className="main">
-            <TabBar
-              tabs={openTabs}
-              activeLeadId={activeLeadId}
-              onTabClick={(leadId) => {
-                setActiveLeadId(leadId);
-                setLoadingLead(true);
-                setTimeout(() => setLoadingLead(false), 150);
-              }}
-              onTabClose={handleTabClose}
-            />
-
-            <div className="content">
-              <section className="content-main">
-                <LeadDetail
-                  lead={currentLead}
-                  batch={currentBatch || null}
-                  allLeads={allLeadsInBatch}
-                  loading={loadingLead}
-                  onToast={showToast}
-                  onLeadUpdate={handleLeadUpdate}
-                  onLeadDelete={handleLeadDelete}
-                  onNavigate={handleLeadNavigate}
+            {/* NEW: Show LeadsTable OR normal view */}
+            {showLeadsTable ? (
+              <LeadsTable 
+                activeBatchId={activeBatchId}
+                initialTab={activeTab}
+              />
+            ) : (
+              <>
+                <TabBar
+                  tabs={openTabs}
+                  activeLeadId={activeLeadId}
+                  onTabClick={(leadId) => {
+                    setActiveLeadId(leadId);
+                    setLoadingLead(true);
+                    setTimeout(() => setLoadingLead(false), 150);
+                  }}
+                  onTabClose={handleTabClose}
                 />
-              </section>
 
-              {currentLead && (
-                <NotesPanel
-                  lead={currentLead}
-                  onSave={() => {}}
-                  onToast={showToast}
-                />
-              )}
-            </div>
+                <div className="content">
+                  <section className="content-main">
+                    <LeadDetail
+                      lead={currentLead}
+                      batch={currentBatch || null}
+                      allLeads={allLeadsInBatch}
+                      loading={loadingLead}
+                      onToast={showToast}
+                      onLeadUpdate={handleLeadUpdate}
+                      onLeadDelete={handleLeadDelete}
+                      onNavigate={handleLeadNavigate}
+                    />
+                  </section>
+
+                  {currentLead && (
+                    <NotesPanel
+                      lead={currentLead}
+                      onSave={() => {}}
+                      onToast={showToast}
+                    />
+                  )}
+                </div>
+              </>
+            )}
           </main>
         </div>
       )}
