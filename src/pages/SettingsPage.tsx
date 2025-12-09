@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Mail, Plus, Trash2, CheckCircle, AlertCircle, ChevronRight } from 'lucide-react';
 import { TopBar } from '../components/nessie/TopBar';
+import { EmailTemplatesManager } from '../components/EmailTemplatesManager';
 
 interface EmailAccount {
   id: string;
@@ -88,6 +89,7 @@ export const SettingsPage = () => {
         }}>
           {[
             { id: 'integrations', label: 'Integrations' },
+            { id: 'templates', label: 'Templates' }
             { id: 'profile', label: 'Profile' },
             { id: 'appearance', label: 'Appearance' },
           ].map((tab) => (
