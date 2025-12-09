@@ -15,9 +15,8 @@ import {
   Tag as TagIcon,
   X,
   Send,
-} from "lucide-react";
-import { EmailComposer } from "../EmailComposer";
-
+} from 'lucide-react';
+import { EmailComposer } from '../EmailComposer';
 
 interface LeadDetailProps {
   lead: SuccessfulScrape | null;
@@ -25,38 +24,107 @@ interface LeadDetailProps {
   allLeads: SuccessfulScrape[];
   loading?: boolean;
   onToast: (message: string) => void;
-  onLeadUpdate?: (leadId: string) => Promise<void> | ((leadId: string, updates: Partial<SuccessfulScrape>) => Promise<void>);
+  onLeadUpdate?: (leadId: string, updates: Partial<SuccessfulScrape>) => Promise<void>;
   onLeadDelete?: (leadId: string) => Promise<void>;
   onNavigate?: (direction: 'prev' | 'next') => void;
 }
 
-const getStatusColor = (status: LeadStatus) => {
-  switch (status) {
-    case 'new':
-      return '#60a5fa';
-    case 'contacted':
-      return '#fbbf24';
-    case 'qualified':
-      return '#34d399';
-    case 'unqualified':
-      return '#f87171';
-    default:
-      return '#9ca3af';
+// Dynamic greeting generator with time-based + random variation
+const getEmptyStateGreeting = (userName: string = 'User'): string => {
+  const now = new Date();
+  const hour = now.getHours();
+  const day = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+  // Time-based pools
+  const morningGreetings = [
+    `Good morning, ${userName}!`,
+    `Morning ${userName}, let's crush it!`,
+    `Rise and shine, ${userName}!`,
+    `Morning ${userName}! Ready to hunt?`,
+  ];
+
+  const afternoonGreetings = [
+    `Happy afternoon, ${userName}!`,
+    `Afternoon ${userName}! Feeling productive?`,
+    `Hey ${userName}, ready to dive in?`,
+    `Alright ${userName}, let's hunt!`,
+  ];
+
+  const eveningGreetings = [
+    `Good evening, ${userName}!`,
+    `Evening ${userName}! One last push?`,
+    `Hey ${userName}, wrapping up?`,
+    `Alright ${userName}, let's go!`,
+  ];
+
+  const nightGreetings = [
+    `Still hunting, ${userName}?`,
+    `Burning the midnight oil, ${userName}? 🌙`,
+    `Late night grind, ${userName}!`,
+    `Night owl mode, ${userName}?`,
+  ];
+
+  // Day-specific variations (adds extra personality on specific days)
+  const mondayGreetings = [
+    `Monday blues? Not with these leads, ${userName}!`,
+    `${userName}! How's your Monday shaping up?`,
+    `Let's make this Monday count, ${userName}!`,
+  ];
+
+  const fridayGreetings = [
+    `TGIF, ${userName}! Let's close some deals!`,
+    `Friday energy, ${userName}! 🔥`,
+    `Almost the weekend, ${userName}! Let's finish strong.`,
+  ];
+
+  const weekendGreetings = [
+    `Weekend warrior, ${userName}?`,
+    `Working on a ${day === 0 ? 'Sunday' : 'Saturday'}? Legend, ${userName}!`,
+    `${userName}! Dedication level: 💯`,
+  ];
+
+  // Select greeting based on time and day
+  let greetingPool: string[];
+
+  // Weekend override
+  if (day === 0 || day === 6) {
+    greetingPool = weekendGreetings;
   }
+  // Monday special
+  else if (day === 1 && Math.random() > 0.5) {
+    greetingPool = mondayGreetings;
+  }
+  // Friday special
+  else if (day === 5 && Math.random() > 0.5) {
+    greetingPool = fridayGreetings;
+  }
+  // Time-based
+  else if (hour >= 5 && hour < 12) {
+    greetingPool = morningGreetings;
+  } else if (hour >= 12 && hour < 17) {
+    greetingPool = afternoonGreetings;
+  } else if (hour >= 17 && hour < 21) {
+    greetingPool = eveningGreetings;
+  } else {
+    greetingPool = nightGreetings;
+  }
+
+  // Return random greeting from selected pool
+  return greetingPool[Math.floor(Math.random() * greetingPool.length)];
 };
 
-export const LeadDetail = ({ 
-  lead, 
-  batch, 
+export const LeadDetail = ({
+  lead,
+  batch,
   allLeads,
-  loading, 
+  loading,
   onToast,
   onLeadUpdate,
   onLeadDelete,
   onNavigate
 }: LeadDetailProps) => {
   const { profile } = useAuth();
-  
+
   const [messageSubject, setMessageSubject] = useState('');
   const [messageBody, setMessageBody] = useState('');
   const [leadStatus, setLeadStatus] = useState<LeadStatus>('new');
@@ -68,201 +136,526 @@ export const LeadDetail = ({
 
   console.log('[LeadDetail] Rendering. Loading:', loading, 'Lead:', lead?.id, 'Batch:', batch?.id);
 
-  const statusColors = getStatusColor(leadStatus);
+  // Calculate lead position in batch
+  const currentLeadIndex = lead ? allLeads.findIndex(l => l.id === lead.id) : -1;
+  const leadNumber = currentLeadIndex + 1;
+  const totalLeads = allLeads.length;
 
+  // Extract first name from full_name (e.g., "Sami Mustafa" → "Sami")
+  const firstName = profile?.full_name?.split(' ')[0] || 'User';
+
+  // Generate greeting once and cache it (won't regenerate on re-renders)
+  const emptyStateGreeting = useMemo(() => getEmptyStateGreeting(firstName), [firstName]);
+
+  // Update message when lead changes
   useEffect(() => {
     if (lead) {
-      setLeadStatus((lead as any).status || 'new');
-      setTags((lead as any).tags || []);
-      setMessageBody(lead.icebreaker || '');
+      // Use the custom subject/message from Make if available, otherwise use defaults
+      const subject = lead.subject || `Quick idea for ${lead.company || lead.domain}`;
+      const body = lead.message || `Hey there,
+
+${lead.icebreaker || 'I noticed your business online.'}
+
+Many ${lead.industry || 'businesses'} lose potential work because follow ups depend on whoever's available at the time. A simple automation layer keeps every enquiry answered, quotes followed up, and appointments booked, all without adding extra admin.
+
+Worth a quick chat this week to see how that setup could work for your team?
+
+Kind regards,
+Kelpie AI × Especial Agency
+Where Marketing Meets Automation`;
+
+      setMessageSubject(subject);
+      setMessageBody(body);
+      setLeadStatus(lead.lead_status || 'new');
+      setTags(lead.tags || []);
     }
   }, [lead]);
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    onToast(`${label} copied to clipboard!`);
-  };
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!lead || !onNavigate) return;
 
-  const handleStatusChange = async (newStatus: LeadStatus) => {
-    setLeadStatus(newStatus);
-    if (onLeadUpdate && lead) {
-      await onLeadUpdate(lead.id, { status: newStatus } as any);
-    }
-  };
-
-  const handleAddTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim())) {
-      const updatedTags = [...tags, newTag.trim()];
-      setTags(updatedTags);
-      setNewTag('');
-      setIsAddingTag(false);
-      if (onLeadUpdate && lead) {
-        onLeadUpdate(lead.id, { tags: updatedTags } as any);
+      if (e.key === 'ArrowLeft' && currentLeadIndex > 0) {
+        onNavigate('prev');
+      } else if (e.key === 'ArrowRight' && currentLeadIndex < totalLeads - 1) {
+        onNavigate('next');
       }
-    }
-  };
+    };
 
-  const handleRemoveTag = (tagToRemove: string) => {
-    const updatedTags = tags.filter(t => t !== tagToRemove);
-    setTags(updatedTags);
-    if (onLeadUpdate && lead) {
-      onLeadUpdate(lead.id, { tags: updatedTags } as any);
-    }
-  };
-
-  const handleDeleteLead = async () => {
-    if (lead && onLeadDelete) {
-      await onLeadDelete(lead.id);
-      setShowDeleteConfirm(false);
-    }
-  };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lead, currentLeadIndex, totalLeads, onNavigate]);
 
   if (loading) {
+    console.log('[LeadDetail] Showing loading skeleton');
     return <LoadingSkeleton />;
   }
 
   if (!lead || !batch) {
+    console.log('[LeadDetail] No lead or batch selected');
+    // Use the cached greeting (generated once on mount)
     return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100%',
-        color: '#94a3b8',
-        fontFamily: "'Space Grotesk', sans-serif",
-      }}>
-        Select a lead to view details
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '500px',
+          textAlign: 'center',
+          padding: '80px 40px',
+          fontFamily: "'Space Grotesk', sans-serif",
+        }}
+      >
+        <div
+          style={{
+            fontSize: '64px',
+            marginBottom: '24px',
+          }}
+        >
+          🐉
+        </div>
+        <div
+          style={{
+            fontSize: '36px',
+            fontWeight: 700,
+            color: '#e2e8f0',
+            marginBottom: '12px',
+          }}
+        >
+          {emptyStateGreeting}
+        </div>
+        <div
+          style={{
+            fontSize: '16px',
+            color: '#94a3b8',
+            lineHeight: 1.6,
+            maxWidth: '450px',
+            marginBottom: '24px',
+          }}
+        >
+          Nessie's ready to dive into your leads. Pick a batch from the sidebar and let's see what we can find lurking in the depths.
+        </div>
+        <div
+          style={{
+            fontSize: '14px',
+            color: '#64748b',
+            fontStyle: 'italic',
+          }}
+        >
+          Pro tip: Use keyboard shortcuts to navigate faster
+        </div>
       </div>
     );
   }
 
-  const currentIndex = allLeads.findIndex(l => l.id === lead.id);
-  const hasPrev = currentIndex > 0;
-  const hasNext = currentIndex < allLeads.length - 1;
+  console.log('[LeadDetail] Displaying lead:', lead.company, lead.domain);
+
+  const copyToClipboard = (text: string, label: string = 'Content') => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+    onToast(`${label} copied to clipboard`);
+  };
+
+  const handleStatusChange = async (newStatus: LeadStatus) => {
+    setLeadStatus(newStatus);
+    if (onLeadUpdate) {
+      await onLeadUpdate(lead.id, {
+        lead_status: newStatus,
+        contacted_at: newStatus === 'contacted' ? new Date().toISOString() : lead.contacted_at
+      });
+    }
+    onToast(`Status updated to ${newStatus}`);
+  };
+
+  const handleAddTag = async () => {
+    if (!newTag.trim()) return;
+
+    const updatedTags = [...tags, newTag.trim()];
+    setTags(updatedTags);
+    setNewTag('');
+    setIsAddingTag(false);
+
+    if (onLeadUpdate) {
+      await onLeadUpdate(lead.id, { tags: updatedTags });
+    }
+    onToast('Tag added');
+  };
+
+  const handleRemoveTag = async (tagToRemove: string) => {
+    const updatedTags = tags.filter(t => t !== tagToRemove);
+    setTags(updatedTags);
+
+    if (onLeadUpdate) {
+      await onLeadUpdate(lead.id, { tags: updatedTags });
+    }
+    onToast('Tag removed');
+  };
+
+  const handleMarkContacted = async () => {
+    const newStatus = leadStatus === 'contacted' ? 'new' : 'contacted';
+    await handleStatusChange(newStatus);
+  };
+
+  const handleDeleteLead = async () => {
+    if (onLeadDelete) {
+      await onLeadDelete(lead.id);
+      setShowDeleteConfirm(false);
+      onToast('Lead deleted');
+    }
+  };
+
+  const openWebsite = () => {
+    window.open(lead.website, '_blank');
+  };
+
+  const getStatusColor = (status: LeadStatus) => {
+    switch (status) {
+      case 'new':
+        return { bg: 'rgba(148, 163, 184, 0.1)', text: '#94a3b8' };
+      case 'contacted':
+        return { bg: 'rgba(59, 130, 246, 0.1)', text: '#3b82f6' };
+      case 'replied':
+        return { bg: 'rgba(251, 191, 36, 0.1)', text: '#fbbf24' };
+      case 'qualified':
+        return { bg: 'rgba(34, 197, 94, 0.1)', text: '#22c55e' };
+      case 'dead':
+        return { bg: 'rgba(239, 68, 68, 0.1)', text: '#ef4444' };
+      default:
+        return { bg: 'rgba(148, 163, 184, 0.1)', text: '#94a3b8' };
+    }
+  };
+
+  const statusColors = getStatusColor(leadStatus);
 
   return (
-    <div style={{
-      fontFamily: "'Space Grotesk', sans-serif",
-      padding: '32px',
-      maxWidth: '900px',
-      margin: '0 auto',
-    }}>
+    <div
+      style={{
+        fontFamily: "'Space Grotesk', sans-serif",
+        padding: '32px',
+        maxWidth: '900px',
+        margin: '0 auto',
+      }}
+    >
       {/* Breadcrumb & Navigation */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '32px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '13px' }}>
-          <span>{batch.label}</span>
-          <span>›</span>
-          <span style={{ color: '#e2e8f0' }}>{lead.company || lead.domain}</span>
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button
-            onClick={() => onNavigate?.('prev')}
-            disabled={!hasPrev}
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(148, 163, 184, 0.1)',
-              borderRadius: '6px',
-              padding: '6px 10px',
-              color: hasPrev ? '#e2e8f0' : '#64748b',
-              cursor: hasPrev ? 'pointer' : 'not-allowed',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '13px',
-              fontWeight: 500,
-            }}
-          >
-            <ChevronLeft size={14} />
-            Prev
-          </button>
-
-          <span style={{ color: '#94a3b8', fontSize: '13px', padding: '0 8px' }}>
-            {currentIndex + 1} of {allLeads.length}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '32px',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            fontSize: '13px',
+            color: '#64748b',
+          }}
+        >
+          <span style={{ fontWeight: 500, color: '#e2e8f0' }}>
+            {lead.company || lead.domain || lead.website}
           </span>
-
-          <button
-            onClick={() => onNavigate?.('next')}
-            disabled={!hasNext}
+          <span>•</span>
+          <div
             style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(148, 163, 184, 0.1)',
-              borderRadius: '6px',
-              padding: '6px 10px',
-              color: hasNext ? '#e2e8f0' : '#64748b',
-              cursor: hasNext ? 'pointer' : 'not-allowed',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '13px',
+              background: 'rgba(20, 184, 166, 0.1)',
+              color: '#14b8a6',
+              padding: '4px 12px',
+              borderRadius: '12px',
+              fontSize: '12px',
               fontWeight: 500,
+              border: '1px solid rgba(20, 184, 166, 0.3)',
             }}
           >
-            Next
-            <ChevronRight size={14} />
-          </button>
+            {batch.label}
+          </div>
+          <span>•</span>
+          <div
+            style={{
+              background: statusColors.bg,
+              color: statusColors.text,
+              padding: '4px 10px',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+            }}
+          >
+            {leadStatus}
+          </div>
         </div>
+
+        {/* Lead Counter & Navigation */}
+        {totalLeads > 1 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '13px',
+                color: '#94a3b8',
+                fontWeight: 500,
+              }}
+            >
+              {leadNumber} of {totalLeads}
+            </span>
+
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button
+                onClick={() => onNavigate && onNavigate('prev')}
+                disabled={currentLeadIndex === 0}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(148, 163, 184, 0.2)',
+                  borderRadius: '4px',
+                  padding: '6px',
+                  cursor: currentLeadIndex === 0 ? 'not-allowed' : 'pointer',
+                  opacity: currentLeadIndex === 0 ? 0.3 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  if (currentLeadIndex > 0) {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                }}
+              >
+                <ChevronLeft size={16} color="#e2e8f0" />
+              </button>
+
+              <button
+                onClick={() => onNavigate && onNavigate('next')}
+                disabled={currentLeadIndex === totalLeads - 1}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(148, 163, 184, 0.2)',
+                  borderRadius: '4px',
+                  padding: '6px',
+                  cursor: currentLeadIndex === totalLeads - 1 ? 'not-allowed' : 'pointer',
+                  opacity: currentLeadIndex === totalLeads - 1 ? 0.3 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  if (currentLeadIndex < totalLeads - 1) {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                }}
+              >
+                <ChevronRight size={16} color="#e2e8f0" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Lead Summary Section */}
       <div style={{ marginBottom: '48px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-          <div>
-            <h1 style={{
-              fontSize: '28px',
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px',
+          }}
+        >
+          <h2
+            style={{
+              fontSize: '18px',
               fontWeight: 600,
               color: '#e2e8f0',
-              margin: '0 0 8px 0',
-            }}>
-              {lead.company || lead.domain}
-            </h1>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-              {lead.website && (
-                <a
-                  href={lead.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: 'var(--accent)',
-                    textDecoration: 'none',
-                    fontSize: '14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  {lead.website}
-                  <ExternalLink size={12} />
-                </a>
-              )}
-              {lead.industry && (
-                <span style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  color: '#94a3b8',
-                  padding: '4px 10px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                }}>
-                  {lead.industry}
-                </span>
-              )}
-              {lead.emails && lead.emails.length > 0 && (
-                <span style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  color: '#94a3b8',
-                  fontSize: '13px',
-                }}>
-                  <Mail size={12} />
+              margin: 0,
+            }}
+          >
+            Lead Summary
+          </h2>
+          <button
+            onClick={openWebsite}
+            style={{
+              background: 'var(--accent)',
+              color: '#021014',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'opacity 0.2s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+          >
+            <ExternalLink size={14} />
+            Open Site
+          </button>
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '20px',
+            paddingBottom: '32px',
+            borderBottom: '1px solid rgba(148, 163, 184, 0.1)',
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: '11px',
+                fontWeight: 500,
+                color: '#94a3b8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                marginBottom: '6px',
+              }}
+            >
+              Website
+            </div>
+            <a
+              href={lead.website}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                fontSize: '14px',
+                fontWeight: 400,
+                color: '#14b8a6',
+                textDecoration: 'none',
+              }}
+            >
+              {lead.website}
+            </a>
+          </div>
+
+          <div>
+            <div
+              style={{
+                fontSize: '11px',
+                fontWeight: 500,
+                color: '#94a3b8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                marginBottom: '6px',
+              }}
+            >
+              Email
+            </div>
+            <div
+              style={{
+                fontSize: '14px',
+                fontWeight: 400,
+                color: '#e2e8f0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              {Array.isArray(lead.emails) && lead.emails.length > 0 ? (
+                <>
                   {lead.emails[0]}
-                </span>
+                  <button
+                    onClick={() => copyToClipboard(lead.emails![0], 'Email')}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      opacity: 0.6,
+                      transition: 'opacity 0.2s',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.6')}
+                  >
+                    <Copy size={14} color="#14b8a6" />
+                  </button>
+                </>
+              ) : (
+                'No email'
               )}
+            </div>
+          </div>
+
+          <div>
+            <div
+              style={{
+                fontSize: '11px',
+                fontWeight: 500,
+                color: '#94a3b8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                marginBottom: '6px',
+              }}
+            >
+              Industry
+            </div>
+            <div
+              style={{
+                display: 'inline-block',
+                background: 'rgba(20, 184, 166, 0.1)',
+                color: '#14b8a6',
+                padding: '4px 10px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                border: '1px solid rgba(20, 184, 166, 0.2)',
+              }}
+            >
+              {lead.industry || 'business'}
+            </div>
+          </div>
+
+          <div>
+            <div
+              style={{
+                fontSize: '11px',
+                fontWeight: 500,
+                color: '#94a3b8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                marginBottom: '6px',
+              }}
+            >
+              Owner
+            </div>
+            <div
+              style={{
+                fontSize: '14px',
+                fontWeight: 400,
+                color: '#e2e8f0',
+              }}
+            >
+              Assigned to Nessie user
             </div>
           </div>
         </div>
@@ -270,105 +663,137 @@ export const LeadDetail = ({
 
       {/* Status & Tags Section */}
       <div style={{ marginBottom: '48px' }}>
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '8px', color: '#94a3b8', fontSize: '13px', fontWeight: 500 }}>
-            Status
-          </label>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {(['new', 'contacted', 'qualified', 'unqualified'] as LeadStatus[]).map((status) => (
-              <button
-                key={status}
-                onClick={() => handleStatusChange(status)}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '6px',
-                  border: leadStatus === status ? `2px solid ${getStatusColor(status)}` : '1px solid rgba(148, 163, 184, 0.1)',
-                  background: leadStatus === status ? `${getStatusColor(status)}15` : 'rgba(255, 255, 255, 0.02)',
-                  color: leadStatus === status ? getStatusColor(status) : '#94a3b8',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  textTransform: 'capitalize',
-                }}
-              >
-                {status}
-              </button>
-            ))}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            flexWrap: 'wrap',
+          }}
+        >
+          {/* Status Dropdown */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span
+              style={{
+                fontSize: '13px',
+                color: '#94a3b8',
+                fontWeight: 500,
+              }}
+            >
+              Status:
+            </span>
+            <select
+              value={leadStatus}
+              onChange={(e) => handleStatusChange(e.target.value as LeadStatus)}
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(148, 163, 184, 0.2)',
+                borderRadius: '6px',
+                padding: '6px 12px',
+                fontSize: '13px',
+                color: '#e2e8f0',
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontWeight: 500,
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="replied">Replied</option>
+              <option value="qualified">Qualified</option>
+              <option value="dead">Dead</option>
+            </select>
           </div>
-        </div>
 
-        <div>
-          <label style={{ display: 'block', marginBottom: '8px', color: '#94a3b8', fontSize: '13px', fontWeight: 500 }}>
-            Tags
-          </label>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Tags */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span
+              style={{
+                fontSize: '13px',
+                color: '#94a3b8',
+                fontWeight: 500,
+              }}
+            >
+              Tags:
+            </span>
             {tags.map((tag) => (
-              <span
+              <div
                 key={tag}
                 style={{
+                  background: 'rgba(148, 163, 184, 0.1)',
+                  color: '#94a3b8',
+                  padding: '4px 8px 4px 12px',
+                  borderRadius: '12px',
+                  fontSize: '12px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '6px 10px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(148, 163, 184, 0.1)',
-                  borderRadius: '6px',
-                  color: '#e2e8f0',
-                  fontSize: '12px',
+                  border: '1px solid rgba(148, 163, 184, 0.2)',
                 }}
               >
-                <TagIcon size={12} />
                 {tag}
                 <button
                   onClick={() => handleRemoveTag(tag)}
                   style={{
-                    background: 'none',
+                    background: 'transparent',
                     border: 'none',
-                    color: '#94a3b8',
                     cursor: 'pointer',
-                    padding: '0',
+                    padding: '2px',
                     display: 'flex',
                     alignItems: 'center',
+                    opacity: 0.6,
+                    transition: 'opacity 0.2s',
                   }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.6')}
                 >
-                  <X size={12} />
+                  <X size={12} color="#94a3b8" />
                 </button>
-              </span>
+              </div>
             ))}
 
             {isAddingTag ? (
-              <div style={{ display: 'flex', gap: '6px' }}>
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                 <input
                   type="text"
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
-                  placeholder="Tag name"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddTag();
+                    if (e.key === 'Escape') {
+                      setIsAddingTag(false);
+                      setNewTag('');
+                    }
+                  }}
+                  placeholder="Tag name..."
                   autoFocus
                   style={{
-                    padding: '6px 10px',
                     background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(148, 163, 184, 0.1)',
+                    border: '1px solid rgba(148, 163, 184, 0.2)',
                     borderRadius: '6px',
-                    color: '#e2e8f0',
+                    padding: '4px 8px',
                     fontSize: '12px',
+                    color: '#e2e8f0',
+                    fontFamily: "'Space Grotesk', sans-serif",
                     outline: 'none',
+                    width: '120px',
                   }}
                 />
                 <button
                   onClick={handleAddTag}
                   style={{
                     background: 'var(--accent)',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '6px 10px',
                     color: '#021014',
+                    border: 'none',
+                    borderRadius: '4px',
+                    padding: '4px 8px',
+                    fontSize: '12px',
+                    fontWeight: 600,
                     cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
                   }}
                 >
-                  <Check size={14} />
+                  Add
                 </button>
                 <button
                   onClick={() => {
@@ -376,33 +801,39 @@ export const LeadDetail = ({
                     setNewTag('');
                   }}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(148, 163, 184, 0.1)',
-                    borderRadius: '6px',
-                    padding: '6px 10px',
-                    color: '#94a3b8',
+                    background: 'transparent',
+                    border: 'none',
                     cursor: 'pointer',
+                    padding: '4px',
                     display: 'flex',
                     alignItems: 'center',
                   }}
                 >
-                  <X size={14} />
+                  <X size={14} color="#94a3b8" />
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => setIsAddingTag(true)}
                 style={{
-                  padding: '6px 10px',
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px dashed rgba(148, 163, 184, 0.3)',
-                  borderRadius: '6px',
+                  background: 'rgba(148, 163, 184, 0.1)',
                   color: '#94a3b8',
+                  border: '1px dashed rgba(148, 163, 184, 0.3)',
+                  borderRadius: '12px',
+                  padding: '4px 12px',
                   fontSize: '12px',
+                  fontWeight: 500,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(148, 163, 184, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(148, 163, 184, 0.1)';
                 }}
               >
                 <TagIcon size={12} />
@@ -410,74 +841,85 @@ export const LeadDetail = ({
               </button>
             )}
           </div>
+
+          {/* Find Email Button - COMING SOON */}
+          {(!lead.emails || lead.emails.length === 0) && (
+            <button
+              disabled
+              title="Coming Soon - Email finder integration"
+              style={{
+                background: 'rgba(148, 163, 184, 0.05)',
+                color: '#64748b',
+                border: '1px solid rgba(148, 163, 184, 0.2)',
+                borderRadius: '6px',
+                padding: '6px 12px',
+                fontSize: '13px',
+                fontWeight: 500,
+                cursor: 'not-allowed',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                opacity: 0.5,
+              }}
+            >
+              <Mail size={14} />
+              Find Email (Coming Soon)
+            </button>
+          )}
         </div>
       </div>
 
       {/* Icebreaker Section */}
-      {lead.icebreaker && (
-        <div style={{ marginBottom: '48px' }}>
-          <div style={{
+      <div style={{ marginBottom: '48px' }}>
+        <h2
+          style={{
+            fontSize: '18px',
+            fontWeight: 600,
+            color: '#e2e8f0',
+            marginBottom: '20px',
+          }}
+        >
+          Icebreaker
+        </h2>
+        <div
+          style={{
+            background: 'rgba(255, 255, 255, 0.02)',
+            padding: '20px',
+            borderRadius: '6px',
+            border: '1px solid rgba(148, 163, 184, 0.1)',
+          }}
+        >
+          <p
+            style={{
+              fontSize: '14px',
+              lineHeight: '1.6',
+              color: '#cbd5e1',
+              margin: 0,
+            }}
+          >
+            {lead.icebreaker}
+          </p>
+        </div>
+      </div>
+
+      {/* Message Section */}
+      <div style={{ marginBottom: '48px' }}>
+        <div
+          style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '12px',
-          }}>
-            <h2 style={{
+            marginBottom: '20px',
+          }}
+        >
+          <h2
+            style={{
               fontSize: '18px',
               fontWeight: 600,
               color: '#e2e8f0',
               margin: 0,
-            }}>
-              Icebreaker
-            </h2>
-            <button
-              onClick={() => copyToClipboard(lead.icebreaker || '', 'Icebreaker')}
-              style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                color: '#94a3b8',
-                border: '1px solid rgba(148, 163, 184, 0.1)',
-                borderRadius: '6px',
-                padding: '6px 12px',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              <Copy size={14} />
-              Copy
-            </button>
-          </div>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.02)',
-            padding: '16px',
-            borderRadius: '6px',
-            border: '1px solid rgba(148, 163, 184, 0.1)',
-            color: '#cbd5e1',
-            fontSize: '14px',
-            lineHeight: '1.6',
-          }}>
-            {lead.icebreaker}
-          </div>
-        </div>
-      )}
-
-      {/* Message Section */}
-      <div style={{ marginBottom: '48px' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px',
-        }}>
-          <h2 style={{
-            fontSize: '18px',
-            fontWeight: 600,
-            color: '#e2e8f0',
-            margin: 0,
-          }}>
+            }}
+          >
             Message
           </h2>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -497,8 +939,8 @@ export const LeadDetail = ({
                 gap: '6px',
                 transition: 'opacity 0.2s',
               }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
             >
               <Copy size={14} />
               Copy Message
@@ -520,8 +962,8 @@ export const LeadDetail = ({
                 gap: '6px',
                 transition: 'opacity 0.2s',
               }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
             >
               <Send size={14} />
               Send Email
@@ -529,209 +971,260 @@ export const LeadDetail = ({
           </div>
         </div>
 
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.02)',
-          padding: '20px',
-          borderRadius: '6px',
-          border: '1px solid rgba(148, 163, 184, 0.1)',
-        }}>
+        <div
+          style={{
+            background: 'rgba(255, 255, 255, 0.02)',
+            padding: '20px',
+            borderRadius: '6px',
+            border: '1px solid rgba(148, 163, 184, 0.1)',
+          }}
+        >
           {batch.channel === 'email' && (
             <div style={{ marginBottom: '16px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                color: '#94a3b8',
-                fontSize: '13px',
-                fontWeight: 500,
-              }}>
+              <div
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 500,
+                  color: '#94a3b8',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginBottom: '8px',
+                }}
+              >
                 Subject
-              </label>
+              </div>
               <input
-                type="text"
                 value={messageSubject}
                 onChange={(e) => setMessageSubject(e.target.value)}
-                placeholder="Email subject"
                 style={{
                   width: '100%',
-                  padding: '10px',
                   background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(148, 163, 184, 0.1)',
+                  border: '1px solid rgba(148, 163, 184, 0.2)',
                   borderRadius: '6px',
-                  color: '#e2e8f0',
+                  padding: '10px 12px',
                   fontSize: '14px',
+                  color: '#e2e8f0',
+                  fontFamily: "'Space Grotesk', sans-serif",
                   outline: 'none',
                 }}
               />
             </div>
           )}
 
-          <label style={{
-            display: 'block',
-            marginBottom: '8px',
-            color: '#94a3b8',
-            fontSize: '13px',
-            fontWeight: 500,
-          }}>
-            Body
-          </label>
-          <textarea
-            value={messageBody}
-            onChange={(e) => setMessageBody(e.target.value)}
-            placeholder="Message body"
-            rows={8}
-            style={{
-              width: '100%',
-              padding: '12px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(148, 163, 184, 0.1)',
-              borderRadius: '6px',
-              color: '#e2e8f0',
-              fontSize: '14px',
-              lineHeight: '1.6',
-              resize: 'vertical',
-              outline: 'none',
-              fontFamily: "'Space Grotesk', sans-serif",
-            }}
-          />
+          <div>
+            <div
+              style={{
+                fontSize: '11px',
+                fontWeight: 500,
+                color: '#94a3b8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                marginBottom: '8px',
+              }}
+            >
+              Body
+            </div>
+            <textarea
+              value={messageBody}
+              onChange={(e) => setMessageBody(e.target.value)}
+              style={{
+                width: '100%',
+                minHeight: '200px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(148, 163, 184, 0.2)',
+                borderRadius: '6px',
+                padding: '12px',
+                fontSize: '14px',
+                lineHeight: '1.7',
+                color: '#e2e8f0',
+                fontFamily: "'Space Grotesk', sans-serif",
+                outline: 'none',
+                resize: 'vertical',
+              }}
+            />
+            <div
+              style={{
+                fontSize: '12px',
+                color: '#64748b',
+                marginTop: '8px',
+              }}
+            >
+              {lead.message
+                ? 'Generated from your custom template. Edit freely before sending.'
+                : 'Auto-generated message based on lead details. Edit freely before sending.'}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div style={{
-        display: 'flex',
-        gap: '12px',
-        flexWrap: 'wrap',
-        paddingTop: '24px',
-        borderTop: '1px solid rgba(148, 163, 184, 0.1)',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: '12px',
+          flexWrap: 'wrap',
+          paddingTop: '24px',
+          borderTop: '1px solid rgba(148, 163, 184, 0.1)',
+        }}
+      >
         <button
+          onClick={handleMarkContacted}
           style={{
-            padding: '10px 16px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(148, 163, 184, 0.1)',
+            background:
+              leadStatus === 'contacted' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+            color: leadStatus === 'contacted' ? '#22c55e' : '#3b82f6',
+            border: `1px solid ${
+              leadStatus === 'contacted' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(59, 130, 246, 0.3)'
+            }`,
             borderRadius: '6px',
-            color: '#94a3b8',
-            fontSize: '13px',
+            padding: '10px 20px',
+            fontSize: '14px',
             fontWeight: 600,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '8px',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background =
+              leadStatus === 'contacted' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(59, 130, 246, 0.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background =
+              leadStatus === 'contacted' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.1)';
           }}
         >
-          <Download size={14} />
+          {leadStatus === 'contacted' ? <Check size={16} /> : null}
+          {leadStatus === 'contacted' ? 'Marked as Contacted' : 'Mark as Contacted'}
+        </button>
+
+        {/* Export CSV - COMING SOON */}
+        <button
+          disabled
+          title="Coming Soon - Export individual leads"
+          style={{
+            background: 'rgba(148, 163, 184, 0.05)',
+            color: '#64748b',
+            border: '1px solid rgba(148, 163, 184, 0.2)',
+            borderRadius: '6px',
+            padding: '10px 20px',
+            fontSize: '14px',
+            fontWeight: 600,
+            cursor: 'not-allowed',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            opacity: 0.5,
+          }}
+        >
+          <Download size={16} />
           Export (Coming Soon)
         </button>
 
+        {/* Add to Sequence - COMING SOON */}
         <button
+          disabled
+          title="Coming Soon - Email sequence integration"
           style={{
-            padding: '10px 16px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(148, 163, 184, 0.1)',
+            background: 'rgba(148, 163, 184, 0.05)',
+            color: '#64748b',
+            border: '1px solid rgba(148, 163, 184, 0.2)',
             borderRadius: '6px',
-            color: '#94a3b8',
-            fontSize: '13px',
+            padding: '10px 20px',
+            fontSize: '14px',
             fontWeight: 600,
-            cursor: 'pointer',
+            cursor: 'not-allowed',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '8px',
+            opacity: 0.5,
           }}
         >
-          <Mail size={14} />
+          <Mail size={16} />
           Add to Sequence (Coming Soon)
         </button>
 
-        <button
-          onClick={() => setShowDeleteConfirm(true)}
-          style={{
-            padding: '10px 16px',
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '6px',
-            color: '#ef4444',
-            fontSize: '13px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            marginLeft: 'auto',
-          }}
-        >
-          <Trash2 size={14} />
-          Delete Lead
-        </button>
-      </div>
+        <div style={{ flex: 1 }} />
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-          onClick={() => setShowDeleteConfirm(false)}
-        >
+        {/* Delete Lead */}
+        {!showDeleteConfirm ? (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              color: '#ef4444',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '6px',
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+            }}
+          >
+            <Trash2 size={16} />
+            Delete Lead
+          </button>
+        ) : (
           <div
             style={{
-              background: '#0f172a',
-              padding: '24px',
-              borderRadius: '12px',
-              maxWidth: '400px',
-              border: '1px solid rgba(148, 163, 184, 0.1)',
+              display: 'flex',
+              gap: '8px',
+              alignItems: 'center',
             }}
-            onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ color: '#e2e8f0', marginBottom: '12px', fontSize: '18px' }}>
-              Delete Lead?
-            </h3>
-            <p style={{ color: '#94a3b8', marginBottom: '20px', fontSize: '14px' }}>
-              Are you sure you want to delete this lead? This action cannot be undone.
-            </p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                style={{
-                  padding: '8px 16px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(148, 163, 184, 0.1)',
-                  borderRadius: '6px',
-                  color: '#94a3b8',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteLead}
-                style={{
-                  padding: '8px 16px',
-                  background: '#ef4444',
-                  border: 'none',
-                  borderRadius: '6px',
-                  color: '#fff',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Delete
-              </button>
-            </div>
+            <span
+              style={{
+                fontSize: '13px',
+                color: '#ef4444',
+                fontWeight: 500,
+              }}
+            >
+              Are you sure?
+            </span>
+            <button
+              onClick={handleDeleteLead}
+              style={{
+                background: '#ef4444',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Yes, Delete
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              style={{
+                background: 'transparent',
+                color: '#94a3b8',
+                border: '1px solid rgba(148, 163, 184, 0.2)',
+                borderRadius: '6px',
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* EmailComposer Modal */}
       {showEmailComposer && (
