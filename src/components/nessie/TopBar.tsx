@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { ChevronDown, LogOut, User, Settings } from 'lucide-react';
 
@@ -10,10 +11,20 @@ interface TopBarProps {
 
 export const TopBar = ({ activeView, onViewChange, onCreateNewBatch }: TopBarProps) => {
   const { profile, signOut, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   
   const views = ['Queue', 'Analytics', 'Settings'];
+
+  // Handle view change with navigation for Settings
+  const handleViewChange = (view: string) => {
+    if (view === 'Settings') {
+      navigate('/settings');
+    } else {
+      onViewChange(view);
+    }
+  };
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -48,7 +59,7 @@ export const TopBar = ({ activeView, onViewChange, onCreateNewBatch }: TopBarPro
           <span
             key={view}
             className={activeView === view ? 'active' : ''}
-            onClick={() => onViewChange(view)}
+            onClick={() => handleViewChange(view)}
           >
             {view}
           </span>
@@ -191,7 +202,7 @@ export const TopBar = ({ activeView, onViewChange, onCreateNewBatch }: TopBarPro
                 <button
                   onClick={() => {
                     setShowUserMenu(false);
-                    onViewChange('Settings');
+                    navigate('/settings');
                   }}
                   style={{
                     width: '100%',
@@ -222,7 +233,7 @@ export const TopBar = ({ activeView, onViewChange, onCreateNewBatch }: TopBarPro
                 <button
                   onClick={() => {
                     setShowUserMenu(false);
-                    onViewChange('Settings');
+                    navigate('/settings');
                   }}
                   style={{
                     width: '100%',
