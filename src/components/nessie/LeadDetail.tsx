@@ -16,7 +16,6 @@ import {
   X,
   Send,
 } from "lucide-react";
-
 import { EmailComposer } from "../EmailComposer"; // ✅ correct path
 
 
