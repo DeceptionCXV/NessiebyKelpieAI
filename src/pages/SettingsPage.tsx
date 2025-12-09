@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Plus, Trash2, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, Plus, Trash2, CheckCircle, AlertCircle, ChevronRight } from 'lucide-react';
 import { TopBar } from '../components/nessie/TopBar';
 
 interface EmailAccount {
@@ -19,28 +19,21 @@ export const SettingsPage = () => {
   const [loading, setLoading] = useState(false);
 
   const handleConnectGmail = () => {
-    // TODO: Implement Gmail OAuth flow
     console.log('Connecting Gmail...');
-    
-    // For now, show what will happen
     alert('Gmail OAuth flow will:\n1. Open Google consent screen\n2. User grants permission\n3. Store OAuth token\n4. Ready to send emails!');
   };
 
   const handleConnectOutlook = () => {
-    // TODO: Implement Outlook OAuth flow
     console.log('Connecting Outlook...');
-    
     alert('Outlook OAuth flow will:\n1. Open Microsoft consent screen\n2. User grants permission\n3. Store OAuth token\n4. Ready to send emails!');
   };
 
   const handleDisconnect = (accountId: string) => {
-    // TODO: Implement disconnect logic
     console.log('Disconnecting account:', accountId);
     setEmailAccounts(prev => prev.filter(acc => acc.id !== accountId));
   };
 
   const handleSetPrimary = (accountId: string) => {
-    // TODO: Update primary account
     console.log('Setting primary account:', accountId);
     setEmailAccounts(prev => prev.map(acc => ({
       ...acc,
@@ -49,9 +42,9 @@ export const SettingsPage = () => {
   };
 
   return (
-    <div>
+    <div style={{ minHeight: '100vh', background: 'var(--background)' }}>
       <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
         rel="stylesheet"
       />
 
@@ -61,93 +54,113 @@ export const SettingsPage = () => {
         onCreateNewBatch={() => {}}
       />
 
-      <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
-        {/* Page Title */}
-        <div style={{ marginBottom: '32px' }}>
+      <div style={{ 
+        padding: '24px 32px', 
+        maxWidth: '1000px', 
+        margin: '0 auto',
+      }}>
+        {/* Compact Page Title */}
+        <div style={{ marginBottom: '24px' }}>
           <h1 style={{
-            fontSize: '32px',
-            fontFamily: 'Playfair Display, serif',
+            fontSize: '24px',
+            fontFamily: 'Space Grotesk, sans-serif',
             fontWeight: 600,
             color: 'var(--text)',
-            marginBottom: '8px',
+            marginBottom: '4px',
           }}>
             Settings
           </h1>
           <p style={{
-            fontSize: '14px',
+            fontSize: '13px',
             color: 'var(--text-secondary)',
+            fontFamily: 'Space Grotesk, sans-serif',
           }}>
-            Manage your account, integrations, and preferences
+            Manage integrations and preferences
           </p>
         </div>
 
-        {/* Tab Navigation */}
+        {/* Compact Tab Navigation */}
         <div style={{
           display: 'flex',
-          gap: '24px',
+          gap: '16px',
           borderBottom: '1px solid var(--border)',
-          marginBottom: '32px',
+          marginBottom: '24px',
         }}>
-          {['integrations', 'profile', 'appearance'].map((tab) => (
+          {[
+            { id: 'integrations', label: 'Integrations' },
+            { id: 'profile', label: 'Profile' },
+            { id: 'appearance', label: 'Appearance' },
+          ].map((tab) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab as any)}
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
               style={{
-                padding: '12px 0',
-                fontSize: '14px',
+                padding: '10px 0',
+                fontSize: '13px',
                 fontWeight: 600,
-                color: activeTab === tab ? 'var(--accent)' : 'var(--text-secondary)',
+                fontFamily: 'Space Grotesk, sans-serif',
+                color: activeTab === tab.id ? 'var(--accent)' : 'var(--text-secondary)',
                 background: 'transparent',
                 border: 'none',
-                borderBottom: activeTab === tab ? '2px solid var(--accent)' : '2px solid transparent',
+                borderBottom: activeTab === tab.id ? '2px solid var(--accent)' : '2px solid transparent',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                textTransform: 'capitalize',
+              }}
+              onMouseEnter={(e) => {
+                if (activeTab !== tab.id) {
+                  e.currentTarget.style.color = 'var(--text)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeTab !== tab.id) {
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                }
               }}
             >
-              {tab}
+              {tab.label}
             </button>
           ))}
         </div>
 
         {/* Integrations Tab */}
         {activeTab === 'integrations' && (
-          <div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Email Integrations Section */}
             <div style={{
               background: 'var(--surface)',
               border: '1px solid var(--border)',
-              borderRadius: '12px',
-              padding: '24px',
-              marginBottom: '24px',
+              borderRadius: '8px',
+              padding: '20px',
             }}>
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'start',
-                marginBottom: '20px',
+                alignItems: 'center',
+                marginBottom: '16px',
               }}>
                 <div>
                   <h2 style={{
-                    fontSize: '18px',
+                    fontSize: '15px',
                     fontWeight: 600,
+                    fontFamily: 'Space Grotesk, sans-serif',
                     color: 'var(--text)',
-                    marginBottom: '4px',
+                    marginBottom: '2px',
                   }}>
                     Email Accounts
                   </h2>
                   <p style={{
-                    fontSize: '13px',
+                    fontSize: '12px',
                     color: 'var(--text-secondary)',
+                    fontFamily: 'Space Grotesk, sans-serif',
                   }}>
-                    Connect your email accounts to send outreach directly from Nessie
+                    Connect email accounts to send outreach from Nessie
                   </p>
                 </div>
               </div>
 
-              {/* Connected Accounts List */}
+              {/* Connected Accounts */}
               {emailAccounts.length > 0 ? (
-                <div style={{ marginBottom: '16px' }}>
+                <div style={{ marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {emailAccounts.map((account) => (
                     <div
                       key={account.id}
@@ -155,91 +168,102 @@ export const SettingsPage = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        padding: '16px',
+                        padding: '12px',
                         background: 'rgba(255, 255, 255, 0.02)',
                         border: '1px solid var(--border)',
-                        borderRadius: '8px',
-                        marginBottom: '8px',
+                        borderRadius: '6px',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                         <div style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '8px',
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '6px',
                           background: account.provider === 'gmail' 
                             ? 'linear-gradient(135deg, #EA4335 0%, #FBBC04 100%)'
                             : 'linear-gradient(135deg, #0078D4 0%, #50E6FF 100%)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
+                          flexShrink: 0,
                         }}>
-                          <Mail size={20} color="white" />
+                          <Mail size={16} color="white" />
                         </div>
-                        <div style={{ flex: 1 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{
-                            fontSize: '14px',
+                            fontSize: '13px',
                             fontWeight: 600,
+                            fontFamily: 'Space Grotesk, sans-serif',
                             color: 'var(--text)',
                             marginBottom: '2px',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px',
+                            gap: '6px',
                           }}>
                             {account.email_address}
                             {account.is_primary && (
                               <span style={{
-                                fontSize: '10px',
-                                fontWeight: 600,
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                background: 'rgba(17, 194, 210, 0.1)',
+                                fontSize: '9px',
+                                fontWeight: 700,
+                                padding: '2px 5px',
+                                borderRadius: '3px',
+                                background: 'rgba(17, 194, 210, 0.15)',
                                 color: 'var(--accent)',
+                                letterSpacing: '0.3px',
                               }}>
                                 PRIMARY
                               </span>
                             )}
                           </div>
                           <div style={{
-                            fontSize: '12px',
+                            fontSize: '11px',
                             color: 'var(--text-secondary)',
+                            fontFamily: 'Space Grotesk, sans-serif',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
                           }}>
-                            {account.provider === 'gmail' ? 'Gmail' : 'Outlook'} • 
+                            {account.provider === 'gmail' ? 'Gmail' : 'Outlook'}
                             {account.is_active ? (
-                              <span style={{ color: 'rgb(34, 197, 94)', marginLeft: '4px' }}>
-                                <CheckCircle size={12} style={{ display: 'inline', marginRight: '4px' }} />
-                                Connected
-                              </span>
+                              <>
+                                <span>•</span>
+                                <CheckCircle size={10} style={{ color: 'rgb(34, 197, 94)' }} />
+                                <span style={{ color: 'rgb(34, 197, 94)' }}>Connected</span>
+                              </>
                             ) : (
-                              <span style={{ color: 'rgb(239, 68, 68)', marginLeft: '4px' }}>
-                                <AlertCircle size={12} style={{ display: 'inline', marginRight: '4px' }} />
-                                Disconnected
-                              </span>
+                              <>
+                                <span>•</span>
+                                <AlertCircle size={10} style={{ color: 'rgb(239, 68, 68)' }} />
+                                <span style={{ color: 'rgb(239, 68, 68)' }}>Disconnected</span>
+                              </>
                             )}
                           </div>
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '6px' }}>
                         {!account.is_primary && (
                           <button
                             onClick={() => handleSetPrimary(account.id)}
                             style={{
-                              padding: '6px 12px',
-                              fontSize: '12px',
+                              padding: '5px 10px',
+                              fontSize: '11px',
                               fontWeight: 600,
+                              fontFamily: 'Space Grotesk, sans-serif',
                               color: 'var(--text-secondary)',
                               background: 'transparent',
                               border: '1px solid var(--border)',
-                              borderRadius: '6px',
+                              borderRadius: '4px',
                               cursor: 'pointer',
                               transition: 'all 0.2s',
                             }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                              e.currentTarget.style.color = 'var(--text)';
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.color = 'var(--text-secondary)';
                             }}
                           >
                             Set Primary
@@ -248,13 +272,14 @@ export const SettingsPage = () => {
                         <button
                           onClick={() => handleDisconnect(account.id)}
                           style={{
-                            padding: '6px 12px',
-                            fontSize: '12px',
+                            padding: '5px 10px',
+                            fontSize: '11px',
                             fontWeight: 600,
+                            fontFamily: 'Space Grotesk, sans-serif',
                             color: 'rgb(239, 68, 68)',
                             background: 'transparent',
                             border: '1px solid rgba(239, 68, 68, 0.3)',
-                            borderRadius: '6px',
+                            borderRadius: '4px',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
                             display: 'flex',
@@ -268,7 +293,7 @@ export const SettingsPage = () => {
                             e.currentTarget.style.background = 'transparent';
                           }}
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={10} />
                           Disconnect
                         </button>
                       </div>
@@ -277,60 +302,64 @@ export const SettingsPage = () => {
                 </div>
               ) : (
                 <div style={{
-                  padding: '32px',
+                  padding: '24px',
                   textAlign: 'center',
                   background: 'rgba(255, 255, 255, 0.02)',
                   border: '1px dashed var(--border)',
-                  borderRadius: '8px',
-                  marginBottom: '16px',
+                  borderRadius: '6px',
+                  marginBottom: '12px',
                 }}>
-                  <Mail size={40} color="var(--text-secondary)" style={{ opacity: 0.5, marginBottom: '12px' }} />
+                  <Mail size={32} color="var(--text-secondary)" style={{ opacity: 0.4, marginBottom: '8px' }} />
                   <p style={{
-                    fontSize: '14px',
+                    fontSize: '13px',
+                    fontFamily: 'Space Grotesk, sans-serif',
                     color: 'var(--text-secondary)',
-                    marginBottom: '4px',
+                    marginBottom: '2px',
                   }}>
                     No email accounts connected
                   </p>
                   <p style={{
-                    fontSize: '12px',
+                    fontSize: '11px',
+                    fontFamily: 'Space Grotesk, sans-serif',
                     color: 'var(--text-secondary)',
+                    opacity: 0.7,
                   }}>
-                    Connect an account below to start sending emails
+                    Connect an account below to start sending
                   </p>
                 </div>
               )}
 
               {/* Connect Buttons */}
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   onClick={handleConnectGmail}
                   disabled={loading}
                   style={{
                     flex: 1,
-                    padding: '12px',
-                    fontSize: '14px',
+                    padding: '10px 14px',
+                    fontSize: '13px',
                     fontWeight: 600,
+                    fontFamily: 'Space Grotesk, sans-serif',
                     color: '#fff',
                     background: 'linear-gradient(135deg, #EA4335 0%, #FBBC04 100%)',
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '6px',
                     cursor: loading ? 'not-allowed' : 'pointer',
                     transition: 'all 0.2s',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '8px',
+                    gap: '6px',
                     opacity: loading ? 0.5 : 1,
                   }}
                   onMouseEnter={(e) => {
-                    if (!loading) e.currentTarget.style.transform = 'translateY(-2px)';
+                    if (!loading) e.currentTarget.style.transform = 'translateY(-1px)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <Plus size={16} />
+                  <Plus size={14} />
                   Connect Gmail
                 </button>
 
@@ -339,71 +368,112 @@ export const SettingsPage = () => {
                   disabled={loading}
                   style={{
                     flex: 1,
-                    padding: '12px',
-                    fontSize: '14px',
+                    padding: '10px 14px',
+                    fontSize: '13px',
                     fontWeight: 600,
+                    fontFamily: 'Space Grotesk, sans-serif',
                     color: '#fff',
                     background: 'linear-gradient(135deg, #0078D4 0%, #50E6FF 100%)',
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '6px',
                     cursor: loading ? 'not-allowed' : 'pointer',
                     transition: 'all 0.2s',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '8px',
+                    gap: '6px',
                     opacity: loading ? 0.5 : 1,
                   }}
                   onMouseEnter={(e) => {
-                    if (!loading) e.currentTarget.style.transform = 'translateY(-2px)';
+                    if (!loading) e.currentTarget.style.transform = 'translateY(-1px)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <Plus size={16} />
+                  <Plus size={14} />
                   Connect Outlook
                 </button>
               </div>
             </div>
 
-            {/* Make.com Integration (Future) */}
+            {/* Other Settings Cards */}
             <div style={{
               background: 'var(--surface)',
               border: '1px solid var(--border)',
-              borderRadius: '12px',
-              padding: '24px',
-            }}>
-              <h2 style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: 'var(--text)',
-                marginBottom: '4px',
-              }}>
-                Other Integrations
-              </h2>
-              <p style={{
-                fontSize: '13px',
-                color: 'var(--text-secondary)',
-                marginBottom: '16px',
-              }}>
-                Coming soon: CRM integrations, Zapier, and more
-              </p>
-              
-              <div style={{
-                padding: '16px',
-                background: 'rgba(251, 191, 36, 0.1)',
-                border: '1px solid rgba(251, 191, 36, 0.2)',
-                borderRadius: '8px',
-              }}>
-                <p style={{
-                  fontSize: '13px',
-                  color: 'rgb(251, 191, 36)',
-                  fontWeight: 500,
+              borderRadius: '8px',
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--surface)';
+            }}
+            >
+              <div>
+                <h3 style={{
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  fontFamily: 'Space Grotesk, sans-serif',
+                  color: 'var(--text)',
+                  marginBottom: '2px',
                 }}>
-                  🚀 More integrations launching soon!
+                  CRM Integrations
+                </h3>
+                <p style={{
+                  fontSize: '11px',
+                  fontFamily: 'Space Grotesk, sans-serif',
+                  color: 'var(--text-secondary)',
+                }}>
+                  Coming soon • HubSpot, Salesforce, Pipedrive
                 </p>
               </div>
+              <ChevronRight size={16} color="var(--text-secondary)" />
+            </div>
+
+            <div style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '8px',
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--surface)';
+            }}
+            >
+              <div>
+                <h3 style={{
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  fontFamily: 'Space Grotesk, sans-serif',
+                  color: 'var(--text)',
+                  marginBottom: '2px',
+                }}>
+                  Automation Tools
+                </h3>
+                <p style={{
+                  fontSize: '11px',
+                  fontFamily: 'Space Grotesk, sans-serif',
+                  color: 'var(--text-secondary)',
+                }}>
+                  Coming soon • Zapier, Make.com, n8n
+                </p>
+              </div>
+              <ChevronRight size={16} color="var(--text-secondary)" />
             </div>
           </div>
         )}
@@ -413,18 +483,25 @@ export const SettingsPage = () => {
           <div style={{
             background: 'var(--surface)',
             border: '1px solid var(--border)',
-            borderRadius: '12px',
-            padding: '24px',
+            borderRadius: '8px',
+            padding: '20px',
           }}>
             <h2 style={{
-              fontSize: '18px',
+              fontSize: '15px',
               fontWeight: 600,
+              fontFamily: 'Space Grotesk, sans-serif',
               color: 'var(--text)',
-              marginBottom: '16px',
+              marginBottom: '8px',
             }}>
               Profile Settings
             </h2>
-            <p style={{ color: 'var(--text-secondary)' }}>Coming soon...</p>
+            <p style={{ 
+              fontSize: '12px',
+              fontFamily: 'Space Grotesk, sans-serif',
+              color: 'var(--text-secondary)',
+            }}>
+              Coming soon...
+            </p>
           </div>
         )}
 
@@ -433,18 +510,25 @@ export const SettingsPage = () => {
           <div style={{
             background: 'var(--surface)',
             border: '1px solid var(--border)',
-            borderRadius: '12px',
-            padding: '24px',
+            borderRadius: '8px',
+            padding: '20px',
           }}>
             <h2 style={{
-              fontSize: '18px',
+              fontSize: '15px',
               fontWeight: 600,
+              fontFamily: 'Space Grotesk, sans-serif',
               color: 'var(--text)',
-              marginBottom: '16px',
+              marginBottom: '8px',
             }}>
               Appearance Settings
             </h2>
-            <p style={{ color: 'var(--text-secondary)' }}>Coming soon...</p>
+            <p style={{ 
+              fontSize: '12px',
+              fontFamily: 'Space Grotesk, sans-serif',
+              color: 'var(--text-secondary)',
+            }}>
+              Coming soon...
+            </p>
           </div>
         )}
       </div>
