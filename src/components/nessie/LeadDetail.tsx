@@ -16,7 +16,7 @@ import {
   X,
   Send,               // 👈 added
 } from 'lucide-react';
-import { EmailComposer } from '../components/EmailComposer'; // 👈 added
+import { EmailComposer } from '../components/EmailComposer.tsx'; // 👈 added
 
 interface LeadDetailProps {
   lead: SuccessfulScrape | null;
