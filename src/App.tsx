@@ -3,7 +3,7 @@ import { LoginPage } from './pages/LoginPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { NessieQueue } from './pages/NessieQueue';
 import { CreateBatchPage } from './pages/CreateBatchPage';
-import NessieStatusBar from "./components/NessieStatusBar";
+import { NessieStatusBar } from "./components/NessieStatusBar";
 // ... other imports
 
 function App() {
