@@ -3,20 +3,22 @@ import type { SuccessfulScrape, LeadStatus } from '../../types/nessie';
 import type { Batch } from '../../hooks/useBatches';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { useAuth } from '../../hooks/useAuth';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  ExternalLink, 
-  Copy, 
-  Trash2, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Copy,
+  Trash2,
   Check,
   Download,
   Mail,
   Tag as TagIcon,
   X,
-  Send,               // 👈 added
-} from 'lucide-react';
-import { EmailComposer } from '../components/EmailComposer'; // 👈 added
+  Send,
+} from "lucide-react";
+
+import { EmailComposer } from "../EmailComposer"; // ✅ correct path
+
 
 interface LeadDetailProps {
   lead: SuccessfulScrape | null;
