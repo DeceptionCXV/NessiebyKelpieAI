@@ -59,7 +59,7 @@ const getEmptyStateGreeting = (userName: string = 'User'): string => {
   const nightGreetings = [
     `Still hunting, ${userName}?`,
     `Burning the midnight oil, ${userName}? 🌙`,
-    `Late night grind, ${userName}!`,
+    `Late night grind, ${userName}?`,
     `Night owl mode, ${userName}?`,
   ];
 
