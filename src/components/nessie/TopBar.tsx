@@ -21,6 +21,10 @@ export const TopBar = ({ activeView, onViewChange, onCreateNewBatch }: TopBarPro
   const handleViewChange = (view: string) => {
     if (view === 'Settings') {
       navigate('/settings');
+    } else if (view === 'Queue' || view === 'Analytics') {
+      // Navigate back to queue with the view
+      navigate('/queue');
+      onViewChange(view);
     } else {
       onViewChange(view);
     }
