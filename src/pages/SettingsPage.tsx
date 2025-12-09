@@ -15,7 +15,7 @@ interface EmailAccount {
 }
 
 export const SettingsPage = () => {
-  const [activeTab, setActiveTab] = useState<'integrations' | 'profile' | 'appearance'>('integrations');
+  const [activeTab, setActiveTab] = useState<'integrations' | 'templates' | 'profile' | 'appearance'>('integrations');
   const [emailAccounts, setEmailAccounts] = useState<EmailAccount[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -89,7 +89,7 @@ export const SettingsPage = () => {
         }}>
           {[
             { id: 'integrations', label: 'Integrations' },
-            { id: 'templates', label: 'Templates' }
+            { id: 'templates', label: 'Templates' },
             { id: 'profile', label: 'Profile' },
             { id: 'appearance', label: 'Appearance' },
           ].map((tab) => (
@@ -478,6 +478,11 @@ export const SettingsPage = () => {
               <ChevronRight size={16} color="var(--text-secondary)" />
             </div>
           </div>
+        )}
+
+        {/* Templates Tab */}
+        {activeTab === 'templates' && (
+          <EmailTemplatesManager />
         )}
 
         {/* Profile Tab */}
