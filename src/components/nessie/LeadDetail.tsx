@@ -954,21 +954,27 @@ Where Marketing Meets Automation`;
               Copy Message
             </button>
 
-            {Array.isArray(lead.emails) && lead.emails.length > 0 && (
-              <button
-                onClick={() => setShowEmailComposer(true)}
-                style={{
-                  padding: '8px 14px',
-                  background: 'var(--accent)',
-                  border: 'none',
-                  borderRadius: '6px',
-                  color: '#021014',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
+            <button
+  onClick={() => setShowEmailComposer(true)}
+  style={{
+    padding: '8px 14px',
+    background: 'var(--accent)',
+    border: 'none',
+    borderRadius: '6px',
+    color: '#021014',
+    fontWeight: 600,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    transition: 'opacity 0.2s',
+  }}
+  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+>
+  <Send size={14} />
+  Send Email
+</button>
               >
                 <Send size={14} />
                 Send Email
