@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Send, Mail } from 'lucide-react';
+import { X, Send, Mail, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
@@ -28,6 +28,7 @@ export const EmailComposer = ({ lead, onClose, onSent }: EmailComposerProps) => 
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+  const [manualEmail, setManualEmail] = useState('');
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
@@ -62,8 +63,22 @@ export const EmailComposer = ({ lead, onClose, onSent }: EmailComposerProps) => 
   };
 
   const handleSend = async () => {
+    const finalEmail = lead.email || manualEmail;
+
+    if (!finalEmail) {
+      alert('Email address is required');
+      return;
+    }
+
     if (!subject || !body) {
       alert('Subject and body are required');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(finalEmail)) {
+      alert('Please enter a valid email address');
       return;
     }
 
@@ -72,7 +87,7 @@ export const EmailComposer = ({ lead, onClose, onSent }: EmailComposerProps) => 
       // Call send-email Edge Function
       const { data, error } = await supabase.functions.invoke('send-email', {
         body: {
-          to_email: lead.email,
+          to_email: finalEmail,
           to_name: lead.full_name,
           subject,
           body,
@@ -93,6 +108,8 @@ export const EmailComposer = ({ lead, onClose, onSent }: EmailComposerProps) => 
       setSending(false);
     }
   };
+
+  const finalEmail = lead.email || manualEmail;
 
   return (
     <div style={{
@@ -130,13 +147,52 @@ export const EmailComposer = ({ lead, onClose, onSent }: EmailComposerProps) => 
               Send Email
             </h2>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-              To: {lead.full_name} ({lead.email})
+              To: {lead.full_name} ({finalEmail || 'No email'})
             </p>
           </div>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
             <X size={20} />
           </button>
         </div>
+
+        {/* Email Input (if no email exists) */}
+        {!lead.email && (
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px',
+              background: 'rgba(251, 191, 36, 0.1)',
+              border: '1px solid rgba(251, 191, 36, 0.3)',
+              borderRadius: '6px',
+              marginBottom: '12px',
+            }}>
+              <AlertCircle size={16} color="#fbbf24" />
+              <span style={{ fontSize: '13px', color: '#fbbf24' }}>
+                No email found for this lead. Please enter one manually.
+              </span>
+            </div>
+            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>
+              Email Address *
+            </label>
+            <input
+              type="email"
+              value={manualEmail}
+              onChange={(e) => setManualEmail(e.target.value)}
+              placeholder="example@company.com"
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                fontSize: '13px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid var(--border)',
+                borderRadius: '6px',
+                color: 'var(--text)',
+              }}
+            />
+          </div>
+        )}
 
         {/* Template Selector */}
         <div style={{ marginBottom: '16px' }}>
@@ -228,16 +284,16 @@ export const EmailComposer = ({ lead, onClose, onSent }: EmailComposerProps) => 
           </button>
           <button
             onClick={handleSend}
-            disabled={sending || !subject || !body}
+            disabled={sending || !subject || !body || !finalEmail}
             style={{
               padding: '10px 20px',
               fontSize: '13px',
               fontWeight: 600,
-              color: sending ? 'var(--text-secondary)' : '#021014',
-              background: sending ? 'rgba(17, 194, 210, 0.5)' : 'var(--accent)',
+              color: sending || !finalEmail ? 'var(--text-secondary)' : '#021014',
+              background: sending || !finalEmail ? 'rgba(17, 194, 210, 0.5)' : 'var(--accent)',
               border: 'none',
               borderRadius: '6px',
-              cursor: sending ? 'not-allowed' : 'pointer',
+              cursor: sending || !finalEmail ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
