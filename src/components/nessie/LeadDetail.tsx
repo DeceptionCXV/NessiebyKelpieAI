@@ -946,28 +946,31 @@ Where Marketing Meets Automation`;
               Copy Message
             </button>
 
-            <button
-              onClick={() => setShowEmailComposer(true)}
-              style={{
-                padding: '8px 14px',
-                background: 'var(--accent)',
-                border: 'none',
-                borderRadius: '6px',
-                color: '#021014',
-                fontWeight: 600,
-                fontSize: '13px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'opacity 0.2s',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-            >
-              <Send size={14} />
-              Send Email
-            </button>
+            {/* Only show Send Email button for email batches */}
+            {batch.channel === 'email' && (
+              <button
+                onClick={() => setShowEmailComposer(true)}
+                style={{
+                  padding: '8px 14px',
+                  background: 'var(--accent)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  color: '#021014',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'opacity 0.2s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+              >
+                <Send size={14} />
+                Send Email
+              </button>
+            )}
           </div>
         </div>
 
