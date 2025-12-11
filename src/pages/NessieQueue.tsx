@@ -4,7 +4,6 @@ import { TopBar } from '../components/nessie/TopBar';
 import { Sidebar } from '../components/nessie/Sidebar';
 import { TabBar } from '../components/nessie/TabBar';
 import { LeadDetail } from '../components/nessie/LeadDetail';
-import { NotesPanel } from '../components/nessie/NotesPanel';
 import { RightSidebar } from '../components/nessie/RightSidebar';
 import { Toast } from '../components/nessie/Toast';
 import { AnalyticsPage } from './AnalyticsPage';
