@@ -38,6 +38,14 @@ export const NessieQueue = () => {
   const { leads, updateLead, deleteLead } = useLeads(activeBatchId);
   const { toasts, showToast, removeToast } = useToast();
   const { staleBatches, hasStaleBatches, markBatchComplete, autoCompleteStale } = useBatchTimeout(batches);
+  // Inside NessieQueue component
+  const handleActivityLeadClick = (leadId: string) => {
+  // Find the lead in allLeads
+    const lead = allLeads.find(l => l.id === leadId);
+    if (lead) {
+      setSelectedLead(lead);
+    }
+};
 
   useEffect(() => {
     if (activeBatchId && leads) {
