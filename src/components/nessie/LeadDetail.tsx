@@ -17,6 +17,7 @@ import {
   Send,
 } from 'lucide-react';
 import { EmailComposer } from '../EmailComposer';
+import { EmailStats } from './EmailStats';
 
 interface LeadDetailProps {
   lead: SuccessfulScrape | null;
@@ -1059,6 +1060,9 @@ Where Marketing Meets Automation`;
           </div>
         </div>
       </div>
+
+      {/* Email Stats - Only show for email batches */}
+      {batch.channel === 'email' && <EmailStats leadId={lead.id} />}
 
       {/* Action Buttons */}
       <div
