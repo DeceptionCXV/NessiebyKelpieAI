@@ -11,21 +11,42 @@ export const LoginPage = () => {
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
-  // Secret keyboard shortcut: Ctrl+Shift+D
+  // Secret keyboard cheat code: W W S S A D
   useEffect(() => {
+    const sequence = ['w', 'w', 's', 's', 'a', 'd'];
+    let index = 0;
+
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-        setShowDevMode(prev => !prev);
-        // Auto-fill credentials when activated
-        if (!showDevMode) {
-          setEmail('sami.mustafa@kelpieai.co.uk');
-          setPassword(''); // You'll need to type password or set it here
+      const key = e.key.toLowerCase();
+
+      if (key === sequence[index]) {
+        index++;
+
+        if (index === sequence.length) {
+          // Cheat code completed – toggle dev mode
+          setShowDevMode(prev => {
+            const next = !prev;
+
+            // When activating dev mode, pre-fill credentials
+            if (!prev) {
+              setEmail('sami.mustafa@kelpieai.co.uk');
+              setPassword('');
+            }
+
+            return next;
+          });
+
+          index = 0; // reset after success
         }
+      } else {
+        // Wrong key – reset sequence
+        index = 0;
       }
     };
+
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [showDevMode]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +71,7 @@ export const LoginPage = () => {
     setError('');
     setLoading(true);
     
-    // Hardcoded dev credentials (only accessible via keyboard shortcut)
+    // Hardcoded dev credentials (only accessible via keyboard cheat code)
     const devEmail = 'sami.mustafa@kelpieai.co.uk';
     const devPassword = 'KilluminatI2211!'; // ← CHANGE THIS!
     
@@ -117,7 +138,7 @@ export const LoginPage = () => {
         {/* Login Form */}
         <div style={{
           background: '#1a2634',
-          border: '1px solid #2d3748',
+          border: '1px solid '#2d3748',
           borderRadius: '12px',
           padding: '32px',
         }}>
@@ -241,7 +262,7 @@ export const LoginPage = () => {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
 
-            {/* SECRET DEV MODE: Only visible via Ctrl+Shift+D */}
+            {/* SECRET DEV MODE: Only visible via W W S S A D */}
             {showDevMode && (
               <button
                 type="button"
@@ -272,7 +293,7 @@ export const LoginPage = () => {
                     e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
                   }
                 }}
-                title="Secret dev login - Press Ctrl+Shift+D to toggle"
+                title="Secret dev login - type W W S S A D"
               >
                 🔓 Dev Quick Login
               </button>
@@ -311,7 +332,7 @@ export const LoginPage = () => {
             fontSize: '13px',
             color: '#64748b',
           }}>
-            Powered by Kelpie AI · Version 0.9.0
+            Powered by Kelpie AI · All rights reserved · Version 0.9.0
           </p>
         </div>
       </div>
