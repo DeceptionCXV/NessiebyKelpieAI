@@ -138,7 +138,7 @@ export const LoginPage = () => {
         {/* Login Form */}
         <div style={{
           background: '#1a2634',
-          border: '1px solid '#2d3748',
+          border: '1px solid #2d3748',
           borderRadius: '12px',
           padding: '32px',
         }}>
