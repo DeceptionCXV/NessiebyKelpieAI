@@ -4,6 +4,7 @@ import { TopBar } from '../components/nessie/TopBar';
 import { Sidebar } from '../components/nessie/Sidebar';
 import { TabBar } from '../components/nessie/TabBar';
 import { LeadDetail } from '../components/nessie/LeadDetail';
+import { NotesPanel } from '../components/nessie/NotesPanel';
 import { RightSidebar } from '../components/nessie/RightSidebar';
 import { Toast } from '../components/nessie/Toast';
 import { AnalyticsPage } from './AnalyticsPage';
@@ -38,14 +39,6 @@ export const NessieQueue = () => {
   const { leads, updateLead, deleteLead } = useLeads(activeBatchId);
   const { toasts, showToast, removeToast } = useToast();
   const { staleBatches, hasStaleBatches, markBatchComplete, autoCompleteStale } = useBatchTimeout(batches);
-  // Inside NessieQueue component
-  const handleActivityLeadClick = (leadId: string) => {
-  // Find the lead in allLeads
-    const lead = allLeads.find(l => l.id === leadId);
-    if (lead) {
-      setSelectedLead(lead);
-    }
-};
 
   useEffect(() => {
     if (activeBatchId && leads) {
@@ -160,6 +153,42 @@ export const NessieQueue = () => {
     }
 
     showToast('Lead deleted');
+  };
+
+  // Handle clicking on activity items in right sidebar
+  const handleActivityLeadClick = (leadId: string) => {
+    console.log('[NessieQueue] Activity clicked for lead:', leadId);
+    
+    // Find the lead across all batches
+    let foundLead: SuccessfulScrape | undefined;
+    let foundBatchId: string | undefined;
+
+    // First check current batch
+    if (activeBatchId) {
+      foundLead = leadsByBatch[activeBatchId]?.find(l => l.id === leadId);
+      if (foundLead) {
+        foundBatchId = activeBatchId;
+      }
+    }
+
+    // If not found, search all batches
+    if (!foundLead) {
+      for (const batchId in leadsByBatch) {
+        foundLead = leadsByBatch[batchId]?.find(l => l.id === leadId);
+        if (foundLead) {
+          foundBatchId = batchId;
+          break;
+        }
+      }
+    }
+
+    // If found, open the lead
+    if (foundLead && foundBatchId) {
+      openLead(foundLead, foundBatchId);
+    } else {
+      console.warn('Lead not found in cache:', leadId);
+      showToast('Lead not found');
+    }
   };
 
   // Handle lead navigation (prev/next)
@@ -385,6 +414,9 @@ export const NessieQueue = () => {
               </>
             )}
           </main>
+
+          {/* Right Sidebar - Activity & Notes */}
+          <RightSidebar onLeadClick={handleActivityLeadClick} />
         </div>
       )}
 
