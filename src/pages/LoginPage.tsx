@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
@@ -7,8 +7,25 @@ export const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showDevMode, setShowDevMode] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
+
+  // Secret keyboard shortcut: Ctrl+Shift+D
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        setShowDevMode(prev => !prev);
+        // Auto-fill credentials when activated
+        if (!showDevMode) {
+          setEmail('sami.mustafa@kelpieai.co.uk');
+          setPassword(''); // You'll need to type password or set it here
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [showDevMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,15 +50,9 @@ export const LoginPage = () => {
     setError('');
     setLoading(true);
     
-    // Use environment variables for dev credentials
-    const devEmail = import.meta.env.VITE_DEV_EMAIL || 'sami.mustafa@kelpieai.co.uk';
-    const devPassword = import.meta.env.VITE_DEV_PASSWORD;
-    
-    if (!devPassword) {
-      setError('Dev password not configured. Set VITE_DEV_PASSWORD in .env.local');
-      setLoading(false);
-      return;
-    }
+    // Hardcoded dev credentials (only accessible via keyboard shortcut)
+    const devEmail = 'sami.mustafa@kelpieai.co.uk';
+    const devPassword = 'YOUR_PASSWORD_HERE'; // ← CHANGE THIS!
     
     const { data, error } = await signIn(devEmail, devPassword);
     
@@ -55,9 +66,6 @@ export const LoginPage = () => {
       navigate('/queue');
     }
   };
-
-  // Only show dev button in development mode
-  const isDev = import.meta.env.DEV;
 
   return (
     <div style={{
@@ -233,8 +241,8 @@ export const LoginPage = () => {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
 
-            {/* DEV ONLY: Quick Login Button */}
-            {isDev && (
+            {/* SECRET DEV MODE: Only visible via Ctrl+Shift+D */}
+            {showDevMode && (
               <button
                 type="button"
                 onClick={handleDevLogin}
@@ -264,9 +272,9 @@ export const LoginPage = () => {
                     e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
                   }
                 }}
-                title="Development quick login - only visible in dev mode"
+                title="Secret dev login - Press Ctrl+Shift+D to toggle"
               >
-                🚀 Dev Quick Login
+                🔓 Dev Quick Login
               </button>
             )}
           </form>
@@ -303,7 +311,7 @@ export const LoginPage = () => {
             fontSize: '13px',
             color: '#64748b',
           }}>
-            Powered by Kelpie AI · Version 0.7.1
+            Powered by Kelpie AI · Version 0.9.0
           </p>
         </div>
       </div>
