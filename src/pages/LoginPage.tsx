@@ -11,7 +11,6 @@ export const LoginPage = () => {
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
-  // Secret keyboard cheat code: W W S S A D
   useEffect(() => {
     const sequence = ['w', 'w', 's', 's', 'a', 'd'];
     let index = 0;
