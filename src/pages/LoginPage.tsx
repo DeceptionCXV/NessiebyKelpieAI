@@ -52,7 +52,7 @@ export const LoginPage = () => {
     
     // Hardcoded dev credentials (only accessible via keyboard shortcut)
     const devEmail = 'sami.mustafa@kelpieai.co.uk';
-    const devPassword = 'YOUR_PASSWORD_HERE'; // ← CHANGE THIS!
+    const devPassword = 'KilluminatI2211!'; // ← CHANGE THIS!
     
     const { data, error } = await signIn(devEmail, devPassword);
     
