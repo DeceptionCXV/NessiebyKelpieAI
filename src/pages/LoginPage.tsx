@@ -332,7 +332,7 @@ export const LoginPage = () => {
             fontSize: '13px',
             color: '#64748b',
           }}>
-            Powered by Kelpie AI · All rights reserved · Version 0.9.0
+            Powered by Kelpie AI · Version 0.9.0 · Dev Build — Internal Use Only
           </p>
         </div>
       </div>
