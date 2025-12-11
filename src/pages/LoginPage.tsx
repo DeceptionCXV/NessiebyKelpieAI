@@ -28,8 +28,8 @@ export const LoginPage = () => {
 
             // When activating dev mode, pre-fill credentials
             if (!prev) {
-              setEmail('sami.mustafa@kelpieai.co.uk');
-              setPassword('');
+              setEmail('DEVELOPER');
+              setPassword('cf56b3ef-2fb1-4068-a603-70ceb311959f');
             }
 
             return next;
