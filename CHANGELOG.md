@@ -123,64 +123,41 @@ This prepares Nessie for email sequencing, tracking, GDPR compliance, and future
 
 ---
 
-##
- Coming Soon
+## Coming Soon
 
-###
- Version 1.0 Features
+### Version 1.0 Features
 
--
- Privacy Policy and Terms pages
--
- Custom domain (nessie.kelpieai.co.uk)
--
- Customer onboarding flow
--
- Performance optimizations
-###
- Analytics Dashboard
+- Privacy Policy and Terms pages
+- Custom domain (nessie.kelpieai.co.uk)
+- Customer onboarding flow
+- Performance optimizations
 
--
- Total leads processed
--
- Success rate tracking
--
- Industry breakdown
--
- Batch performance comparison
--
- Export reports to PDF
-###
- Email Automation
+### Analytics Dashboard
 
--
- Gmail and Outlook OAuth integration
--
- Send emails directly from Nessie
--
- Automated follow-up sequences
--
- Email scheduling
--
- Reply detection
-###
- Advanced Features
+- Total leads processed
+- Success rate tracking
+- Industry breakdown
+- Batch performance comparison
+-  Export reports to PDF
 
--
- AI Voice calling integration
--
- CRM connectors (HubSpot, Salesforce)
--
- Multi-channel outreach
--
- White-label branding
--
- API access
+### Email Automation
+
+- Gmail and Outlook OAuth integration
+- Send emails directly from Nessie
+- Automated follow-up sequences
+- Email scheduling
+- Reply detection
+
+###  Advanced Features
+
+- AI Voice calling integration
+- CRM connectors (HubSpot, Salesforce)
+- Multi-channel outreach
+- White-label branding
+- API access
 ---
 
-##
- 
-Technology Stack
+## Technology Stack
 
 Frontend: React + TypeScript + Vite
 Backend: Supabase (Database, Auth, Edge Functions)
@@ -190,17 +167,14 @@ Email: Hunter.io (discovery), Resend (sending)
 Hosting: EU infrastructure (Dublin, Ireland)
 ---
 
-##
-Need Help?
+## Need Help?
 
 Found a bug? Let us know and we'll fix it  
 Feature request? We're always improving Nessie  
 Questions? Check out our docs or reach out
 ---
 
-**
-Nessie by Kelpie AI
-**
+**Nessie by Kelpie AI**
   
 Version 0.9.0 · 12 December 2025  
 100% GDPR Compliant · 🏴󠁧󠁢󠁳󠁣󠁴󠁿 Made in Scotland · 🐉 Developed by Kelpie AI
