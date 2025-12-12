@@ -82,7 +82,7 @@ This prepares Nessie for email sequencing, tracking, GDPR compliance, and future
 
 ---
 
- [0.7.4] — Queue System
+ [0.7.0] — Queue System
  ✨ Added
 - New **Queue** UI  
 - Batch list sidebar  
@@ -95,7 +95,7 @@ This prepares Nessie for email sequencing, tracking, GDPR compliance, and future
 
 ---
 
- [0.7.3] — Early UI + Basic Scraping
+ [0.6.0] — Early UI + Basic Scraping
  ✨ Added
 - Base UI skeleton for Nessie  
 - Batch creation page  
@@ -107,7 +107,7 @@ This prepares Nessie for email sequencing, tracking, GDPR compliance, and future
 
 ---
 
- [0.7.2] — Functional Prototype (First Real Version)
+ [0.5.4] — Functional Prototype (First Real Version)
  ✨ Added
 - Initial working lead scraper  
 - Basic batch and lead models  
