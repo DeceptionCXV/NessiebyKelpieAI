@@ -401,14 +401,6 @@ export const NessieQueue = () => {
                       onNavigate={handleLeadNavigate}
                     />
                   </section>
-
-                  {currentLead && (
-                    <NotesPanel
-                      lead={currentLead}
-                      onSave={() => {}}
-                      onToast={showToast}
-                    />
-                  )}
                 </div>
               </>
             )}
