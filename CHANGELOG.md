@@ -202,7 +202,7 @@ Questions? Check out our docs or reach out
 Nessie by Kelpie AI
 **
   
-Version 0.9.0 · December 2025  
+Version 0.9.0 · 12 December 2025  
 100% GDPR Compliant · 🏴󠁧󠁢󠁳󠁣󠁴󠁿 Made in Scotland · 🐉 Developed by Kelpie AI
 
 
