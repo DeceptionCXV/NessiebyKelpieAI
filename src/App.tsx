@@ -14,32 +14,20 @@ function App() {
         {/* Public route */}
         <Route path="/login" element={<LoginPage />} />
         
-        {/* Protected routes */}
-        <Route 
-          path="/queue" 
-          element={
-            <ProtectedRoute>
-              <NessieQueue />
-            </ProtectedRoute>
-          } 
+        {/* Protected routes - TEMPORARILY DISABLED FOR DEMO */}
+        <Route
+          path="/queue"
+          element={<NessieQueue />}
         />
-        
-        <Route 
-          path="/queue/new" 
-          element={
-            <ProtectedRoute>
-              <CreateBatchPage />
-            </ProtectedRoute>
-          } 
+
+        <Route
+          path="/queue/new"
+          element={<CreateBatchPage />}
         />
-        
-        <Route 
-          path="/settings" 
-          element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
-          } 
+
+        <Route
+          path="/settings"
+          element={<SettingsPage />}
         />
         
         {/* Redirect root to queue */}
