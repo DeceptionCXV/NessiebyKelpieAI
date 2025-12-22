@@ -19,32 +19,68 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
+    // ⚠️ TEMPORARY MOCK AUTH - REMOVE WHEN SUPABASE AUTH IS FIXED ⚠️
+    // Hardcoded fake user session for testing
+    const MOCK_USER: User = {
+      id: 'cf56b3ef-2fb1-4068-a603-70ceb311959f',
+      email: 'sami.mustafa@kelpieai.co.uk',
+      aud: 'authenticated',
+      role: 'authenticated',
+      created_at: new Date().toISOString(),
+      app_metadata: {},
+      user_metadata: {},
+    } as User;
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-        setLoading(false);
-      }
-    });
+    const MOCK_SESSION: Session = {
+      access_token: 'mock-access-token',
+      refresh_token: 'mock-refresh-token',
+      expires_in: 3600,
+      expires_at: Date.now() / 1000 + 3600,
+      token_type: 'bearer',
+      user: MOCK_USER,
+    };
 
-    return () => subscription.unsubscribe();
+    const MOCK_PROFILE: UserProfile = {
+      id: 'cf56b3ef-2fb1-4068-a603-70ceb311959f',
+      email: 'sami.mustafa@kelpieai.co.uk',
+      full_name: 'Sami Mustafa',
+      username: 'sami',
+      role: 'admin',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    setUser(MOCK_USER);
+    setSession(MOCK_SESSION);
+    setProfile(MOCK_PROFILE);
+    setLoading(false);
+
+    // COMMENTED OUT: Real Supabase auth check
+    // supabase.auth.getSession().then(({ data: { session } }) => {
+    //   setSession(session);
+    //   setUser(session?.user ?? null);
+    //   if (session?.user) {
+    //     fetchProfile(session.user.id);
+    //   } else {
+    //     setLoading(false);
+    //   }
+    // });
+
+    // COMMENTED OUT: Real auth state change listener
+    // const {
+    //   data: { subscription },
+    // } = supabase.auth.onAuthStateChange((_event, session) => {
+    //   setSession(session);
+    //   setUser(session?.user ?? null);
+    //   if (session?.user) {
+    //     fetchProfile(session.user.id);
+    //   } else {
+    //     setProfile(null);
+    //     setLoading(false);
+    //   }
+    // });
+
+    // return () => subscription.unsubscribe();
   }, []);
 
   const fetchProfile = async (userId: string) => {
