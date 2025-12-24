@@ -21,6 +21,9 @@ This prepares Nessie for email sequencing, tracking, GDPR compliance, and future
 - Reduced latency for UK/EU users  
 - Aligned Nessie with GDPR best practices  
 - Clean separation of app region, email region, and DNS
+- Fixed auth migration issue where NULL token columns caused login failures
+- Updated all auth.users string columns to use empty strings instead of NULL
+- Resolved "Database error querying schema" error during authentication
 
  🛠 Internal Updates
 - Updated env variables to EU endpoints  
